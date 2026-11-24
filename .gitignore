@@ -33,5 +33,7 @@ Thumbs.db
 *.aotconf
 hs_err_pid*
 replay_pid*
+.jqwik-database
+**/.jqwik-database
 .env
 .env.local
