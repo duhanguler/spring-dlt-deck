@@ -1,0 +1,26 @@
+name: Bug Report
+description: Report a bug in spring-dlt-deck
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug and observed behavior.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Environment Versions
+      placeholder: "spring-dlt-deck 0.1.0, Java 25, Spring Boot 4.2.0, Kafka 4.4, PostgreSQL 17"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce
+      placeholder: "Minimal steps or failing Testcontainers snippet"
+    validations:
+      required: true

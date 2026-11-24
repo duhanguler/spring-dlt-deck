@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: JDK 25 + NullAway + Spotless + ArchUnit + jqwik + Testcontainers 2
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Check formatting (Spotless)
+        run: ./mvnw spotless:check -B
+
+      - name: Build, Static Analysis (ErrorProne + NullAway), Unit/Fuzz/ArchUnit, Testcontainers ITs, JaCoCo & SBOM
+        run: ./mvnw clean verify -Psbom -B
+
+      - name: Upload JaCoCo Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-core-report
+          path: dlt-deck-core/target/site/jacoco/
+
+      - name: Upload CycloneDX SBOM
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-sbom
+          path: target/sbom.json
+
+  docker-aot:
+    name: Build Java 25 AOT Cache + Compact Object Headers Demo Image
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Demo AOT Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dlt-deck-demo/Dockerfile
+          push: false
+          load: true
+          tags: spring-dlt-deck-demo:ci

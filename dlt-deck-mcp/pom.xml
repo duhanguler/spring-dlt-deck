@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.duhanguler</groupId>
+        <artifactId>spring-dlt-deck-parent</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>dlt-deck-mcp</artifactId>
+    <name>spring-dlt-deck :: MCP (Fail-Closed HITL)</name>
+    <description>Fail-closed human-in-the-loop Model Context Protocol server exposing read-only triage, Tier-1 dry-run, and PENDING_APPROVAL plan drafting only</description>
+
+    <properties>
+        <automatic.module.name>io.github.duhanguler.dltdeck.mcp</automatic.module.name>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.duhanguler</groupId>
+            <artifactId>dlt-deck-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.duhanguler</groupId>
+            <artifactId>dlt-deck-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <artifactId>mcp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit6</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

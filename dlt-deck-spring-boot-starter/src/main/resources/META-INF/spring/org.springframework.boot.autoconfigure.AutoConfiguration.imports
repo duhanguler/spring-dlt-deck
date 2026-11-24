@@ -1,0 +1,7 @@
+io.github.duhanguler.dltdeck.starter.autoconfigure.DltDeckRedisAutoConfiguration
+io.github.duhanguler.dltdeck.starter.autoconfigure.DltDeckCoreAutoConfiguration
+io.github.duhanguler.dltdeck.starter.autoconfigure.DltDeckJdbcStorageAutoConfiguration
+io.github.duhanguler.dltdeck.starter.autoconfigure.DltDeckKafkaAutoConfiguration
+io.github.duhanguler.dltdeck.starter.autoconfigure.DltDeckSecurityAutoConfiguration
+io.github.duhanguler.dltdeck.starter.autoconfigure.DltDeckWebAutoConfiguration
+io.github.duhanguler.dltdeck.starter.autoconfigure.DltDeckObservabilityAutoConfiguration

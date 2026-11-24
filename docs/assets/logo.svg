@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 150" role="img" aria-label="spring-dlt-deck">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b111d"/>
+      <stop offset="100%" stop-color="#131c2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <rect width="760" height="150" rx="14" fill="url(#bg)" stroke="#26344d" stroke-width="1.5"/>
+  <g transform="translate(34,32)">
+    <rect x="0" y="0" width="84" height="84" rx="14" fill="#172338" stroke="#38bdf8" stroke-width="2"/>
+    <path d="M18 28 H54 M18 42 H66 M18 56 H44" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="62" cy="56" r="8" fill="#22c55e"/>
+    <path d="M58.5 56 L61 58.5 L66 53.5" fill="none" stroke="#0b111d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="144" y="70" fill="#f1f5f9" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="38" font-weight="800" letter-spacing="-1">spring-dlt-deck</text>
+  <text x="145" y="102" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">Kafka Dead-Letter Triage · Honest 3-Tier Dry-Run · Key-Ordered Fail-Closed Replay</text>
+  <rect x="145" y="114" width="210" height="4" rx="2" fill="url(#accent)"/>
+</svg>

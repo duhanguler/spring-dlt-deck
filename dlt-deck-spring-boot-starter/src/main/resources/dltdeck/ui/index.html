@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} — DLT Control Plane</title>
+<style nonce="{{CSP_NONCE}}">
+:root {
+  --bg: #0c0e13;
+  --surface: #141821;
+  --surface-2: #1b212e;
+  --border: #262f40;
+  --text: #e6edf5;
+  --muted: #8b98ad;
+  --accent: #38bdf8;
+  --accent-strong: #0284c7;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --err: #ef4444;
+  --purple: #a78bfa;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+}
+html[data-theme="light"] {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --border: #d5dce6;
+  --text: #111827;
+  --muted: #526074;
+  --accent: #0369a1;
+  --accent-strong: #075985;
+  --ok: #15803d;
+  --warn: #b45309;
+  --err: #b91c1c;
+  --purple: #6d28d9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; line-height: 1.45; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: -0.02em; }
+.brand-dot { width: 10px; height: 10px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); border: 1px solid var(--border); background: var(--surface-2); }
+.badge.ok { color: var(--ok); border-color: rgba(34,197,94,0.35); }
+.badge.warn { color: var(--warn); border-color: rgba(245,158,11,0.4); }
+.badge.err { color: var(--err); border-color: rgba(239,68,68,0.45); }
+.badge.purple { color: var(--purple); border-color: rgba(167,139,250,0.4); }
+.toolbar { display: flex; align-items: center; gap: 8px; }
+button, select, input, textarea { font-family: inherit; font-size: 12px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: 6px 10px; }
+button { cursor: pointer; font-weight: 600; transition: border-color 0.15s, background 0.15s; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent-strong); border-color: var(--accent); color: #fff; }
+button.danger { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.5); color: var(--err); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.container { max-width: 1440px; margin: 0 auto; padding: 16px 20px 40px; }
+.lag-banner { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 14px; font-family: var(--mono); font-size: 12px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.kpi-val { font-size: 22px; font-weight: 700; font-family: var(--mono); margin-top: 4px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.tab { padding: 8px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.panel { display: none; }
+.panel.active { display: block; }
+.split { display: grid; grid-template-columns: 380px 1fr; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 12px; }
+.card h3 { font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+.cluster-item { padding: 10px; border: 1px solid var(--border); border-radius: 5px; margin-bottom: 8px; cursor: pointer; background: var(--surface-2); }
+.cluster-item.selected { border-color: var(--accent); }
+.cluster-title { font-family: var(--mono); font-size: 12px; font-weight: 600; word-break: break-all; }
+.cluster-rec { font-size: 11px; color: var(--muted); margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover { background: var(--surface-2); }
+pre { background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 10px; overflow-x: auto; font-family: var(--mono); font-size: 11.5px; max-height: 260px; white-space: pre-wrap; word-break: break-word; }
+.form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 11px; color: var(--muted); }
+.alert { padding: 10px 12px; border-radius: 5px; margin-bottom: 12px; font-family: var(--mono); font-size: 12px; display: none; }
+.alert.show { display: block; }
+.alert.err { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.45); color: var(--err); }
+.alert.ok { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4); color: var(--ok); }
+.row-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.mt-8 { margin-top: 8px; }
+.mt-10 { margin-top: 10px; }
+.mt-12 { margin-top: 12px; }
+.patch-editor { width: 100%; font-family: var(--mono); }
+@media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } .split { grid-template-columns: 1fr; } .form-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body data-base-path="{{BASE_PATH}}">
+<header>
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <span>{{TITLE}}</span>
+    <span class="badge" id="pod-badge">pod: --</span>
+    <span class="badge ok" id="sse-badge">SSE: live</span>
+  </div>
+  <div class="toolbar">
+    <button id="btn-export-csv" type="button">Export CSV</button>
+    <button id="btn-theme" type="button">Swiss Light</button>
+    <button id="btn-refresh" class="primary" type="button">Refresh</button>
+  </div>
+</header>
+
+<div class="container">
+  <div id="global-alert" class="alert"></div>
+
+  <div class="lag-banner" id="lag-banner">
+    <span id="lag-summary">Ingestion Engine: checking... | Live Lag: 0</span>
+    <span id="topics-summary">Subscribed DLT Topics: none</span>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Actionable DLT</div><div class="kpi-val" id="kpi-actionable">0</div></div>
+    <div class="kpi"><div class="kpi-label">Total Ingested</div><div class="kpi-val" id="kpi-total">0</div></div>
+    <div class="kpi"><div class="kpi-label">Clusters</div><div class="kpi-val" id="kpi-clusters">0</div></div>
+    <div class="kpi"><div class="kpi-label">Pending Approval</div><div class="kpi-val" id="kpi-pending">0</div></div>
+    <div class="kpi"><div class="kpi-label">INDETERMINATE</div><div class="kpi-val" id="kpi-indeterminate">0</div></div>
+    <div class="kpi"><div class="kpi-label">HoL Blocked / Paused</div><div class="kpi-val" id="kpi-blocked">0</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="triage" type="button">1. Triage &amp; Poison-Pill Inspector</button>
+    <button class="tab" data-tab="plans" type="button">2. Replay Plans &amp; Four-Eyes Queue</button>
+    <button class="tab" data-tab="audit" type="button">3. Tamper-Evident Audit &amp; Merkle Verifier</button>
+  </div>
+
+  <section id="tab-triage" class="panel active">
+    <div class="split">
+      <div class="card">
+        <h3><span>Exception Clusters (Deduplicated)</span><button id="btn-clear-cluster" type="button">All</button></h3>
+        <div id="clusters-list">Loading clusters...</div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>
+            <span>DLT Messages (Signed Keyset Cursor)</span>
+            <span class="toolbar">
+              <select id="status-filter">
+                <option value="">All Statuses</option>
+                <option value="NEW">NEW</option>
+                <option value="FAILED_PUBLISH">FAILED_PUBLISH</option>
+                <option value="INDETERMINATE">INDETERMINATE</option>
+                <option value="BLOCKED_BY_PRIOR_KEY_FAILURE">BLOCKED_BY_PRIOR_KEY_FAILURE</option>
+                <option value="QUARANTINED">QUARANTINED</option>
+                <option value="PUBLISHED">PUBLISHED</option>
+                <option value="RE_DLT_DETECTED">RE_DLT_DETECTED</option>
+                <option value="DISCARDED">DISCARDED</option>
+              </select>
+              <button id="btn-next-page" type="button" disabled>Next Page &rarr;</button>
+            </span>
+          </h3>
+          <table>
+            <thead>
+              <tr><th>Coords</th><th>Format</th><th>Category</th><th>Status</th><th>Hops</th><th>Ingested</th></tr>
+            </thead>
+            <tbody id="messages-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="card" id="inspector-card">
+          <h3>
+            <span>Message Inspector</span>
+            <span id="inspector-badges" class="toolbar"></span>
+          </h3>
+          <div id="inspector-empty">Select a DLT message above to inspect payload, headers, RFC 7396 merge patch, or run Honest 3-Tier Dry-Run.</div>
+          <div id="inspector-body" hidden>
+            <div class="row-actions">
+              <button id="btn-unmask" type="button">Unmask PII (APPROVER Audited)</button>
+              <button id="btn-discard" class="danger" type="button">Discard</button>
+              <button id="btn-resolve-new" type="button">Resolve &rarr; NEW</button>
+              <button id="btn-resolve-pub" type="button">Resolve &rarr; PUBLISHED</button>
+            </div>
+            <h3 class="mt-12">Payload Preview</h3>
+            <pre id="insp-payload"></pre>
+            <h3 class="mt-10">Headers &amp; CloudEvents</h3>
+            <pre id="insp-headers"></pre>
+            <h3 class="mt-10">Canonical Stacktrace</h3>
+            <pre id="insp-stack"></pre>
+
+            <h3 class="mt-12">RFC 7396 Merge Patch &amp; Honest 3-Tier Dry-Run Lab</h3>
+            <div id="not-patchable-banner" class="alert warn"></div>
+            <textarea id="patch-editor" class="patch-editor" rows="3" placeholder='{"currency": "TRY"}'></textarea>
+            <div class="row-actions">
+              <button id="btn-patch-preview" type="button">Preview Patch Diff</button>
+              <button id="btn-dry-t1" class="primary" type="button">Tier-1 Dry-Run (Validate)</button>
+              <button id="btn-dry-t2" type="button">Tier-2 Dry-Run (Handler SPI)</button>
+              <input id="canary-topic-input" type="text" placeholder="orders.canary">
+              <button id="btn-dry-t3" type="button">Tier-3 Canary Replay</button>
+            </div>
+            <pre id="dryrun-output" class="mt-8">Dry-run and diff output appears here.</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-plans" class="panel">
+    <div class="card">
+      <h3>Draft Key-Ordered Replay Plan (Frozen Snapshot + SHA-256 planSpecHash)</h3>
+      <div class="form-grid">
+        <div class="field"><label>Plan Name</label><input id="plan-name" type="text" placeholder="Recover Orders Validation Batch"></div>
+        <div class="field"><label>Target Topic (Validated via AdminClient)</label><input id="plan-target" type="text" placeholder="orders.events"></div>
+        <div class="field"><label>DLT Topic Filter</label><input id="plan-dlt-topic" type="text" placeholder="orders.events.dlt"></div>
+        <div class="field"><label>Fingerprint Filter (Optional)</label><input id="plan-fp" type="text" placeholder="sha256..."></div>
+        <div class="field"><label>Ordering Mode</label>
+          <select id="plan-ordering">
+            <option value="PRESERVE_KEY_ORDER">PRESERVE_KEY_ORDER (Striped + HoL Barrier)</option>
+            <option value="UNORDERED_FAST">UNORDERED_FAST</option>
+          </select>
+        </div>
+        <div class="field"><label>Rate Limit (msg/sec)</label><input id="plan-rate" type="number" value="50"></div>
+        <div class="field"><label>Max Records</label><input id="plan-max" type="number" value="500"></div>
+        <div class="field"><label>Optional RFC 7396 Patch JSON</label><input id="plan-patch" type="text" placeholder='{"currency":"TRY"}'></div>
+      </div>
+      <button id="btn-draft-plan" class="primary" type="button">Draft Replay Plan</button>
+    </div>
+
+    <div class="card">
+      <h3>Replay Plans &amp; Four-Eyes Approval Queue</h3>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Target</th><th>Mode</th><th>Snapshot / Hash</th><th>Maker &rarr; Checker</th><th>Progress (Pub/Fail/Indet/HoL/ReDLT)</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="plans-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="tab-audit" class="panel">
+    <div class="card">
+      <h3>
+        <span>Tamper-Evident SHA-256 Audit Ledger &amp; Batch Merkle Checkpoints</span>
+        <button id="btn-verify-audit" class="primary" type="button">Verify Cryptographic Chain</button>
+      </h3>
+      <div id="audit-verify-banner" class="alert"></div>
+      <table>
+        <thead>
+          <tr><th>Seq</th><th>Time</th><th>Actor (Role)</th><th>Action</th><th>Target</th><th>Merkle Root</th><th>Entry Hash</th></tr>
+        </thead>
+        <tbody id="audit-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script nonce="{{CSP_NONCE}}">
+(() => {
+  const base = document.body.dataset.basePath || '/dlt-deck';
+  const state = { selectedCluster: null, selectedMessageId: null, selectedMessage: null, nextCursor: null };
+
+  const $ = (id) => document.getElementById(id);
+
+  function readCookie(name) {
+    const match = document.cookie.split('; ').find(r => r.startsWith(name + '='));
+    return match ? decodeURIComponent(match.split('=')[1]) : '';
+  }
+
+  function showAlert(msg, kind) {
+    const el = $('global-alert');
+    el.textContent = msg;
+    el.className = 'alert show ' + kind;
+    setTimeout(() => el.classList.remove('show'), 8000);
+  }
+
+  async function api(path, options = {}) {
+    const headers = Object.assign({ 'Accept': 'application/json' }, options.headers || {});
+    if (options.method && options.method !== 'GET') {
+      headers['Content-Type'] = 'application/json';
+      const xsrf = readCookie('XSRF-TOKEN');
+      if (xsrf) headers['X-XSRF-TOKEN'] = xsrf;
+    }
+    const res = await fetch(base + path, Object.assign({}, options, { headers, credentials: 'same-origin' }));
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    if (!res.ok) {
+      const detail = data && data.detail ? `${data.title || res.status}: ${data.detail}` : `HTTP ${res.status}`;
+      showAlert(detail, 'err');
+      throw new Error(detail);
+    }
+    return data;
+  }
+
+  function statusBadge(status) {
+    const span = document.createElement('span');
+    span.textContent = status;
+    let cls = 'badge';
+    if (status === 'PUBLISHED' || status === 'COMPLETED') cls += ' ok';
+    else if (status === 'INDETERMINATE' || status === 'PAUSED_BLAST_RADIUS' || status === 'QUARANTINED' || status === 'RE_DLT_DETECTED') cls += ' err';
+    else if (status === 'BLOCKED_BY_PRIOR_KEY_FAILURE' || status === 'PENDING_APPROVAL' || status === 'FAILED_PUBLISH') cls += ' warn';
+    span.className = cls;
+    return span;
+  }
+
+  async function loadOverview() {
+    const o = await api('/api/overview');
+    $('pod-badge').textContent = 'pod: ' + o.podId;
+    $('kpi-actionable').textContent = o.actionableMessages;
+    $('kpi-total').textContent = o.totalMessages;
+    $('kpi-clusters').textContent = o.clusterCount;
+    $('kpi-pending').textContent = o.pendingApprovalPlans;
+    $('kpi-indeterminate').textContent = o.indeterminateCount;
+    $('kpi-blocked').textContent = `${o.blockedHolCount} / ${o.pausedBlastRadiusPlans}`;
+    $('lag-summary').textContent = `Ingestion: ${o.ingestionRunning ? 'RUNNING' : 'STOPPED'} | Live Lag: ${o.totalIngestionLag} msgs`;
+    $('topics-summary').textContent = 'Topics: ' + (o.subscribedTopics && o.subscribedTopics.length ? o.subscribedTopics.join(', ') : 'none');
+  }
+
+  async function loadClusters() {
+    const clusters = await api('/api/clusters?limit=50');
+    const host = $('clusters-list');
+    host.textContent = '';
+    if (!clusters.length) {
+      host.textContent = 'No DLT exception clusters ingested yet.';
+      return;
+    }
+    clusters.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'cluster-item' + (state.selectedCluster === c.fingerprint ? ' selected' : '');
+      const title = document.createElement('div');
+      title.className = 'cluster-title';
+      title.textContent = `${c.rootCauseFqcn || c.exceptionFqcn || 'UnknownException'} (${c.totalCount} total / ${c.newCount} new)`;
+      const meta = document.createElement('div');
+      meta.className = 'row-actions';
+      const cat = document.createElement('span');
+      cat.className = 'badge purple';
+      cat.textContent = c.failureCategory;
+      const fp = document.createElement('span');
+      fp.className = 'badge';
+      fp.textContent = c.fingerprint.slice(0, 12);
+      meta.append(cat, fp);
+      const rec = document.createElement('div');
+      rec.className = 'cluster-rec';
+      rec.textContent = c.recommendation;
+      div.append(title, meta, rec);
+      div.addEventListener('click', () => {
+        state.selectedCluster = c.fingerprint;
+        $('plan-fp').value = c.fingerprint;
+        loadClusters();
+        loadMessages(null);
+      });
+      host.appendChild(div);
+    });
+  }
+
+  async function loadMessages(cursor) {
+    const params = new URLSearchParams({ limit: '25' });
+    if (state.selectedCluster) params.set('fingerprint', state.selectedCluster);
+    const st = $('status-filter').value;
+    if (st) params.set('status', st);
+    if (cursor) params.set('cursor', cursor);
+
+    const page = await api('/api/messages?' + params.toString());
+    state.nextCursor = page.hasMore ? page.nextCursor : null;
+    $('btn-next-page').disabled = !state.nextCursor;
+
+    const tbody = $('messages-tbody');
+    tbody.textContent = '';
+    page.items.forEach(m => {
+      const tr = document.createElement('tr');
+      tr.className = 'clickable';
+      const tdCoords = document.createElement('td');
+      tdCoords.textContent = `${m.dltTopic}[${m.dltPartition}]@${m.dltOffset}`;
+      const tdFmt = document.createElement('td');
+      tdFmt.textContent = m.schemaId ? `${m.payloadFormat} (#${m.schemaId})` : m.payloadFormat;
+      const tdCat = document.createElement('td');
+      tdCat.textContent = m.failureCategory;
+      const tdSt = document.createElement('td');
+      tdSt.appendChild(statusBadge(m.status));
+      const tdHops = document.createElement('td');
+      tdHops.textContent = String(m.replayHops);
+      const tdTime = document.createElement('td');
+      tdTime.textContent = m.ingestedAt ? m.ingestedAt.replace('T', ' ').slice(0, 19) : '';
+      tr.append(tdCoords, tdFmt, tdCat, tdSt, tdHops, tdTime);
+      tr.addEventListener('click', () => inspectMessage(m.id, false));
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function inspectMessage(id, unmask) {
+    const detail = await api(`/api/messages/${id}?unmask=${unmask}`);
+    state.selectedMessageId = id;
+    state.selectedMessage = detail;
+    $('inspector-empty').hidden = true;
+    $('inspector-body').hidden = false;
+
+    const badges = $('inspector-badges');
+    badges.textContent = '';
+    badges.appendChild(statusBadge(detail.summary.status));
+    const pii = document.createElement('span');
+    pii.className = 'badge ' + (detail.piiRedacted ? 'ok' : 'warn');
+    pii.textContent = detail.piiRedacted ? 'PII REDACTED' : 'PII UNMASKED (AUDITED)';
+    badges.appendChild(pii);
+    if (detail.schemaId) {
+      const sb = document.createElement('span');
+      sb.className = 'badge purple';
+      sb.textContent = 'Confluent Schema #' + detail.schemaId;
+      badges.appendChild(sb);
+    }
+    if (!detail.patchable) {
+      const np = document.createElement('span');
+      np.className = 'badge err';
+      np.textContent = 'NOT_PATCHABLE';
+      badges.appendChild(np);
+    }
+
+    $('insp-payload').textContent = detail.payloadPreview || '<empty>';
+    $('insp-headers').textContent = JSON.stringify({
+      key: detail.messageKey,
+      cloudEventType: detail.cloudEventType,
+      cloudEventId: detail.cloudEventId,
+      headers: detail.headers
+    }, null, 2);
+    $('insp-stack').textContent = detail.canonicalStacktrace || detail.sampleMessage || 'No stacktrace captured.';
+
+    const npBanner = $('not-patchable-banner');
+    if (!detail.patchable) {
+      npBanner.textContent = `Binary/non-JSON guard active (${detail.payloadFormat}): RFC 7396 merge patching is blocked to prevent payload corruption.`;
+      npBanner.className = 'alert show err';
+      $('btn-patch-preview').disabled = true;
+    } else {
+      npBanner.className = 'alert';
+      $('btn-patch-preview').disabled = false;
+    }
+    if (detail.summary.originalTopic) {
+      $('canary-topic-input').value = detail.summary.originalTopic + '.canary';
+      $('plan-target').value = detail.summary.originalTopic;
+      $('plan-dlt-topic').value = detail.summary.dltTopic;
+    }
+  }
+
+  async function loadPlans() {
+    const plans = await api('/api/plans?limit=50');
+    const tbody = $('plans-tbody');
+    tbody.textContent = '';
+    plans.forEach(p => {
+      const tr = document.createElement('tr');
+      const cells = [
+        p.name,
+        p.targetTopic,
+        p.orderingMode,
+        `${p.snapshotCount} msgs / ${p.planSpecHash.slice(0, 10)}`,
+        `${p.createdBy} -> ${p.approvedBy || 'awaiting'}`,
+        `${p.totalPublished} / ${p.totalFailed} / ${p.totalIndeterminate} / ${p.totalBlockedHol} / ${p.totalReDlt}`
+      ];
+      cells.forEach(text => {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      const tdSt = document.createElement('td');
+      tdSt.appendChild(statusBadge(p.status));
+      tr.appendChild(tdSt);
+
+      const tdAct = document.createElement('td');
+      if (p.status === 'PENDING_APPROVAL') {
+        const btnApp = document.createElement('button');
+        btnApp.className = 'primary';
+        btnApp.textContent = 'Approve';
+        btnApp.addEventListener('click', async () => {
+          await api(`/api/plans/${p.id}/approve`, {
+            method: 'POST',
+            body: JSON.stringify({ expectedSpecHash: p.planSpecHash, executeAsync: true })
+          });
+          showAlert('Plan approved and dispatched for striped virtual-thread replay.', 'ok');
+          refreshAll();
+        });
+        const btnRej = document.createElement('button');
+        btnRej.className = 'danger';
+        btnRej.textContent = 'Reject';
+        btnRej.addEventListener('click', async () => {
+          await api(`/api/plans/${p.id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason: 'Rejected via workbench' })
+          });
+          showAlert('Plan rejected.', 'ok');
+          refreshAll();
+        });
+        tdAct.append(btnApp, ' ', btnRej);
+      }
+      tr.appendChild(tdAct);
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function loadAudit() {
+    const entries = await api('/api/audit?limit=100');
+    const tbody = $('audit-tbody');
+    tbody.textContent = '';
+    entries.forEach(e => {
+      const tr = document.createElement('tr');
+      [
+        String(e.sequenceNo),
+        e.createdAt ? e.createdAt.replace('T', ' ').slice(0, 19) : '',
+        `${e.actor} (${e.actorRole})`,
+        e.action,
+        `${e.targetType}:${e.targetId.slice(0, 14)}`,
+        e.merkleRoot ? e.merkleRoot.slice(0, 14) + '...' : '-',
+        e.entryHash.slice(0, 16) + '...'
+      ].forEach(t => {
+        const td = document.createElement('td');
+        td.textContent = t;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function refreshAll() {
+    await Promise.all([loadOverview(), loadClusters(), loadMessages(null), loadPlans(), loadAudit()]);
+  }
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      $('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Theme toggle
+  $('btn-theme').addEventListener('click', () => {
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    document.documentElement.dataset.theme = isDark ? 'light' : 'dark';
+    $('btn-theme').textContent = isDark ? 'Carbon Dark' : 'Swiss Light';
+  });
+
+  $('btn-refresh').addEventListener('click', () => refreshAll());
+  $('btn-export-csv').addEventListener('click', () => { window.location.href = base + '/api/messages/export.csv'; });
+  $('btn-clear-cluster').addEventListener('click', () => { state.selectedCluster = null; loadClusters(); loadMessages(null); });
+  $('status-filter').addEventListener('change', () => loadMessages(null));
+  $('btn-next-page').addEventListener('click', () => { if (state.nextCursor) loadMessages(state.nextCursor); });
+
+  $('btn-unmask').addEventListener('click', () => { if (state.selectedMessageId) inspectMessage(state.selectedMessageId, true); });
+  $('btn-discard').addEventListener('click', async () => {
+    if (!state.selectedMessageId) return;
+    await api(`/api/messages/${state.selectedMessageId}/discard`, { method: 'POST', body: JSON.stringify({ reason: 'Discarded in workbench' }) });
+    showAlert('Message discarded and audited.', 'ok');
+    refreshAll();
+  });
+  $('btn-resolve-new').addEventListener('click', async () => {
+    if (!state.selectedMessageId) return;
+    await api(`/api/messages/${state.selectedMessageId}/resolve`, { method: 'POST', body: JSON.stringify({ targetStatus: 'NEW', justification: 'Approver verified idempotent retry safe' }) });
+    showAlert('Resolved to NEW.', 'ok');
+    refreshAll();
+  });
+  $('btn-resolve-pub').addEventListener('click', async () => {
+    if (!state.selectedMessageId) return;
+    await api(`/api/messages/${state.selectedMessageId}/resolve`, { method: 'POST', body: JSON.stringify({ targetStatus: 'PUBLISHED', justification: 'Approver verified downstream delivery' }) });
+    showAlert('Resolved to PUBLISHED.', 'ok');
+    refreshAll();
+  });
+
+  $('btn-patch-preview').addEventListener('click', async () => {
+    if (!state.selectedMessageId) return;
+    const res = await api(`/api/messages/${state.selectedMessageId}/patch-preview`, {
+      method: 'POST', body: JSON.stringify({ mergePatchJson: $('patch-editor').value })
+    });
+    $('dryrun-output').textContent = JSON.stringify({ diffs: res.diffs, prettyJson: res.prettyJson }, null, 2);
+  });
+
+  async function runDryRun(tier) {
+    if (!state.selectedMessageId) return;
+    const res = await api(`/api/messages/${state.selectedMessageId}/dry-run`, {
+      method: 'POST',
+      body: JSON.stringify({
+        tier,
+        targetTopic: tier === 'TIER_3_CANARY' ? $('canary-topic-input').value : $('plan-target').value,
+        mergePatchJson: $('patch-editor').value.trim() || null
+      })
+    });
+    $('dryrun-output').textContent = JSON.stringify(res, null, 2);
+  }
+  $('btn-dry-t1').addEventListener('click', () => runDryRun('TIER_1_VALIDATE'));
+  $('btn-dry-t2').addEventListener('click', () => runDryRun('TIER_2_HANDLER_SPI'));
+  $('btn-dry-t3').addEventListener('click', () => runDryRun('TIER_3_CANARY'));
+
+  $('btn-draft-plan').addEventListener('click', async () => {
+    await api('/api/plans', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: $('plan-name').value || 'Replay Plan',
+        targetTopic: $('plan-target').value,
+        dltTopicFilter: $('plan-dlt-topic').value || null,
+        fingerprintFilter: $('plan-fp').value || null,
+        orderingMode: $('plan-ordering').value,
+        rateLimitPerSec: parseInt($('plan-rate').value, 10) || 50,
+        maxRecords: parseInt($('plan-max').value, 10) || 500,
+        payloadPatchJson: $('plan-patch').value.trim() || null
+      })
+    });
+    showAlert('Replay plan drafted with frozen snapshot & planSpecHash.', 'ok');
+    refreshAll();
+  });
+
+  $('btn-verify-audit').addEventListener('click', async () => {
+    const res = await api('/api/audit/verify');
+    const b = $('audit-verify-banner');
+    b.textContent = res.valid
+      ? `INTACT: Verified ${res.totalChecked} hash-chained audit entries. Latest SHA-256: ${res.latestHash || 'GENESIS'}`
+      : `TAMPER DETECTED at sequence ${res.firstInvalidSequenceNo}: ${res.failureReason}`;
+    b.className = 'alert show ' + (res.valid ? 'ok' : 'err');
+  });
+
+  // Live SSE overview pulse
+  function connectSse() {
+    try {
+      const es = new EventSource(base + '/api/stream');
+      es.addEventListener('overview', () => { $('sse-badge').textContent = 'SSE: live'; });
+      es.onerror = () => { $('sse-badge').textContent = 'SSE: reconnecting'; };
+    } catch {}
+  }
+
+  refreshAll().catch(() => {});
+  connectSse();
+})();
+</script>
+</body>
+</html>

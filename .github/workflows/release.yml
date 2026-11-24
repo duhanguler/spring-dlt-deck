@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Verify, Package SBOM & Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Build Release Artifacts & CycloneDX SBOM
+        run: ./mvnw clean verify -Prelease -B
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            target/sbom.json
+            dlt-deck-core/target/dlt-deck-core-*.jar
+            dlt-deck-spring-boot-starter/target/dlt-deck-spring-boot-starter-*.jar

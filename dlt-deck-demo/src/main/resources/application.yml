@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: spring-dlt-deck-demo
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/dltdeck}
+    username: ${SPRING_DATASOURCE_USERNAME:dltdeck}
+    password: ${SPRING_DATASOURCE_PASSWORD:dltdeck}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: payments-demo-consumer
+      auto-offset-reset: earliest
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+dlt:
+  deck:
+    enabled: true
+    base-path: /dlt-deck
+    pod-id: ${HOSTNAME:demo-pod-1}
+    ingestion:
+      enabled: ${DLT_DECK_INGESTION_ENABLED:true}
+      topic-patterns:
+        - ".*\\.dlt$"
+      discovery-interval: 5s
+      max-replay-hops: 3
+    replay:
+      stripe-count: 4
+      max-concurrent-stripes: 4
+      require-four-eyes-approval: true
+      merkle-checkpoint-batch-size: 10
+      validate-target-topic-exists: true
+    storage:
+      auto-migrate: true
+      gzip-compression: true
+      cursor-hmac-secret: ${DLT_DECK_CURSOR_SECRET:demo-hmac-secret-change-in-production-32bytes!}
+    redis:
+      enabled: true
+    security:
+      enabled: true
+      csrf-enabled: true
+    ui:
+      enabled: true
+      title: "spring-dlt-deck // Payments Control Plane"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,dltdeck
+  endpoint:
+    health:
+      show-details: always
+
+server:
+  port: 8080

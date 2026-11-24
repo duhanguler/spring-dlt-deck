@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.duhanguler</groupId>
+        <artifactId>spring-dlt-deck-parent</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>dlt-deck-bom</artifactId>
+    <packaging>pom</packaging>
+    <name>spring-dlt-deck :: BOM</name>
+    <description>Bill of Materials for spring-dlt-deck modules</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.github.duhanguler</groupId>
+                <artifactId>dlt-deck-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.duhanguler</groupId>
+                <artifactId>dlt-deck-storage-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.duhanguler</groupId>
+                <artifactId>dlt-deck-storage-redis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.duhanguler</groupId>
+                <artifactId>dlt-deck-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.duhanguler</groupId>
+                <artifactId>dlt-deck-mcp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.duhanguler</groupId>
+                <artifactId>dlt-deck-test-support</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

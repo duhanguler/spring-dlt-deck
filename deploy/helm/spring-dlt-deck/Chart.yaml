@@ -1,0 +1,14 @@
+apiVersion: v2
+name: spring-dlt-deck
+description: Production Helm chart for spring-dlt-deck Kafka Dead-Letter Topic Triage & Replay Control Plane
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - kafka
+  - spring-boot
+  - dead-letter-topic
+  - observability
+home: https://github.com/duhanguler/spring-dlt-deck
+sources:
+  - https://github.com/duhanguler/spring-dlt-deck

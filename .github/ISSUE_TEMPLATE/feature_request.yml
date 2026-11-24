@@ -1,0 +1,19 @@
+name: Feature Request
+description: Propose a new capability or SPI extension for spring-dlt-deck
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Use Case
+      description: What production Kafka DLT triage or replay workflow does this improve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe the API, SPI, or configuration design and any safety invariants involved.
+    validations:
+      required: true
