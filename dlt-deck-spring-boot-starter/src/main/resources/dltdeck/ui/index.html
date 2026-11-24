@@ -1,624 +1,2631 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{TITLE}} — DLT Control Plane</title>
-<style nonce="{{CSP_NONCE}}">
-:root {
-  --bg: #0c0e13;
-  --surface: #141821;
-  --surface-2: #1b212e;
-  --border: #262f40;
-  --text: #e6edf5;
-  --muted: #8b98ad;
-  --accent: #38bdf8;
-  --accent-strong: #0284c7;
-  --ok: #22c55e;
-  --warn: #f59e0b;
-  --err: #ef4444;
-  --purple: #a78bfa;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
-}
-html[data-theme="light"] {
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --surface-2: #eef1f5;
-  --border: #d5dce6;
-  --text: #111827;
-  --muted: #526074;
-  --accent: #0369a1;
-  --accent-strong: #075985;
-  --ok: #15803d;
-  --warn: #b45309;
-  --err: #b91c1c;
-  --purple: #6d28d9;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; line-height: 1.45; }
-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: -0.02em; }
-.brand-dot { width: 10px; height: 10px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
-.badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); border: 1px solid var(--border); background: var(--surface-2); }
-.badge.ok { color: var(--ok); border-color: rgba(34,197,94,0.35); }
-.badge.warn { color: var(--warn); border-color: rgba(245,158,11,0.4); }
-.badge.err { color: var(--err); border-color: rgba(239,68,68,0.45); }
-.badge.purple { color: var(--purple); border-color: rgba(167,139,250,0.4); }
-.toolbar { display: flex; align-items: center; gap: 8px; }
-button, select, input, textarea { font-family: inherit; font-size: 12px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: 6px 10px; }
-button { cursor: pointer; font-weight: 600; transition: border-color 0.15s, background 0.15s; }
-button:hover { border-color: var(--accent); }
-button.primary { background: var(--accent-strong); border-color: var(--accent); color: #fff; }
-button.danger { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.5); color: var(--err); }
-button:disabled { opacity: 0.45; cursor: not-allowed; }
-.container { max-width: 1440px; margin: 0 auto; padding: 16px 20px 40px; }
-.lag-banner { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 14px; font-family: var(--mono); font-size: 12px; }
-.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px; }
-.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
-.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.kpi-val { font-size: 22px; font-weight: 700; font-family: var(--mono); margin-top: 4px; }
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
-.tab { padding: 8px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); }
-.tab.active { color: var(--text); border-bottom-color: var(--accent); }
-.panel { display: none; }
-.panel.active { display: block; }
-.split { display: grid; grid-template-columns: 380px 1fr; gap: 14px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 12px; }
-.card h3 { font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-.cluster-item { padding: 10px; border: 1px solid var(--border); border-radius: 5px; margin-bottom: 8px; cursor: pointer; background: var(--surface-2); }
-.cluster-item.selected { border-color: var(--accent); }
-.cluster-title { font-family: var(--mono); font-size: 12px; font-weight: 600; word-break: break-all; }
-.cluster-rec { font-size: 11px; color: var(--muted); margin-top: 4px; }
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
-th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-tr.clickable { cursor: pointer; }
-tr.clickable:hover { background: var(--surface-2); }
-pre { background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 10px; overflow-x: auto; font-family: var(--mono); font-size: 11.5px; max-height: 260px; white-space: pre-wrap; word-break: break-word; }
-.form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
-.field { display: flex; flex-direction: column; gap: 4px; }
-.field label { font-size: 11px; color: var(--muted); }
-.alert { padding: 10px 12px; border-radius: 5px; margin-bottom: 12px; font-family: var(--mono); font-size: 12px; display: none; }
-.alert.show { display: block; }
-.alert.err { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.45); color: var(--err); }
-.alert.ok { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4); color: var(--ok); }
-.row-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.mt-8 { margin-top: 8px; }
-.mt-10 { margin-top: 10px; }
-.mt-12 { margin-top: 12px; }
-.patch-editor { width: 100%; font-family: var(--mono); }
-@media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } .split { grid-template-columns: 1fr; } .form-grid { grid-template-columns: repeat(2, 1fr); } }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{TITLE}} · spring-dlt-deck</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2318181b'/%3E%3Ctext x='12' y='17' text-anchor='middle' fill='%23fafafa' font-family='monospace' font-size='14' font-weight='700'%3ED%3C/text%3E%3C/svg%3E">
+  <style nonce="{{CSP_NONCE}}">
+    /* spring-dlt-deck — Carbon Dark & Swiss Light Precision Operations Workbench */
+    :root,
+    [data-theme="dark"] {
+      --bg-canvas: #09090b;
+      --bg-panel: #0e0e11;
+      --bg-surface: #141418;
+      --bg-hover: #1b1b21;
+      --bg-active: #202028;
+      --border: #222229;
+      --border-strong: #32323d;
+      --ink-1: #f4f4f5;
+      --ink-2: #a1a1aa;
+      --ink-3: #71717a;
+      --btn-bg: #fafafa;
+      --btn-fg: #09090b;
+      --btn-hover: #e4e4e7;
+      --ok: #4ade80;
+      --ok-bg: rgba(74, 222, 128, 0.08);
+      --ok-bd: rgba(74, 222, 128, 0.25);
+      --danger: #f87171;
+      --danger-bg: rgba(248, 113, 113, 0.08);
+      --danger-bd: rgba(248, 113, 113, 0.28);
+      --warn: #fbbf24;
+      --warn-bg: rgba(251, 191, 36, 0.08);
+      --warn-bd: rgba(251, 191, 36, 0.28);
+      --info: #60a5fa;
+      --info-bg: rgba(96, 165, 250, 0.08);
+      --info-bd: rgba(96, 165, 250, 0.25);
+      --chart-stroke: #f4f4f5;
+      --chart-fill: rgba(244, 244, 245, 0.07);
+      --overlay: rgba(0, 0, 0, 0.65);
+    }
+
+    [data-theme="light"] {
+      --bg-canvas: #fafafa;
+      --bg-panel: #ffffff;
+      --bg-surface: #f4f4f5;
+      --bg-hover: #ececef;
+      --bg-active: #e4e4e7;
+      --border: #e4e4e7;
+      --border-strong: #d4d4d8;
+      --ink-1: #09090b;
+      --ink-2: #52525b;
+      --ink-3: #71717a;
+      --btn-bg: #18181b;
+      --btn-fg: #fafafa;
+      --btn-hover: #27272a;
+      --ok: #15803d;
+      --ok-bg: rgba(21, 128, 61, 0.07);
+      --ok-bd: rgba(21, 128, 61, 0.24);
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.07);
+      --danger-bd: rgba(220, 38, 38, 0.25);
+      --warn: #b45309;
+      --warn-bg: rgba(180, 83, 9, 0.08);
+      --warn-bd: rgba(180, 83, 9, 0.28);
+      --info: #1d4ed8;
+      --info-bg: rgba(29, 78, 216, 0.07);
+      --info-bd: rgba(29, 78, 216, 0.24);
+      --chart-stroke: #18181b;
+      --chart-fill: rgba(24, 24, 27, 0.06);
+      --overlay: rgba(9, 9, 11, 0.42);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg-canvas);
+      color: var(--ink-1);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; background: none; border: 0; padding: 0; }
+    code, pre, kbd, .dk-mono {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .dk-tabular { font-variant-numeric: tabular-nums; }
+    .dk-muted { color: var(--ink-2); }
+    .dk-subtle { color: var(--ink-3); }
+    .dk-icon { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
+    [hidden] { display: none !important; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+
+    /* Workbench Shell: 44px Topbar + 228px Left Rail + Fluid Main + 28px Telemetry Bar */
+    .dk-shell {
+      display: grid;
+      grid-template-rows: 44px 1fr 28px;
+      grid-template-columns: 228px 1fr;
+      grid-template-areas:
+        "top top"
+        "rail main"
+        "foot foot";
+      height: 100vh;
+      overflow: hidden;
+    }
+    .dk-shell.dk-rail-collapsed { grid-template-columns: 0 1fr; }
+    .dk-shell.dk-rail-collapsed .dk-rail { border-inline-end: 0; overflow: hidden; }
+
+    .dk-topbar {
+      grid-area: top;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      z-index: 30;
+    }
+    .dk-top-left, .dk-top-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .dk-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .dk-brand-mark {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .dk-ver {
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--ink-2);
+    }
+    .dk-crumb-sep { color: var(--ink-3); }
+    .dk-crumb {
+      font-size: 12px;
+      color: var(--ink-2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dk-crumb-cur { color: var(--ink-1); font-weight: 500; }
+
+    /* Command Palette Trigger */
+    .dk-cmdk-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 310px;
+      max-width: 38vw;
+      height: 28px;
+      padding: 0 8px 0 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--ink-3);
+      font-size: 12px;
+      transition: border-color 120ms ease, background 120ms ease;
+    }
+    .dk-cmdk-trigger:hover { border-color: var(--border-strong); color: var(--ink-2); }
+    .dk-cmdk-trigger-left { display: inline-flex; align-items: center; gap: 7px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .dk-kbd {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 5px;
+      font-size: 10px;
+      line-height: 1.4;
+      color: var(--ink-2);
+      background: var(--bg-panel);
+      border: 1px solid var(--border-strong);
+      border-radius: 3px;
+    }
+
+    /* Left Navigation Rail */
+    .dk-rail {
+      grid-area: rail;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--bg-panel);
+      border-inline-end: 1px solid var(--border);
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .dk-rail-scroll { padding: 10px 8px; display: flex; flex-direction: column; gap: 14px; }
+    .dk-rail-filter-wrap { padding: 0 2px; }
+    .dk-rail-filter { height: 26px; font-size: 11.5px; }
+    .dk-rail-group-title {
+      padding: 0 8px 5px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .dk-nav-list { display: flex; flex-direction: column; gap: 1px; }
+    .dk-nav-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      height: 30px;
+      padding: 0 8px;
+      border-radius: 4px;
+      color: var(--ink-2);
+      font-size: 12.5px;
+      text-align: start;
+      transition: background 100ms ease, color 100ms ease;
+    }
+    .dk-nav-item:hover { background: var(--bg-hover); color: var(--ink-1); }
+    .dk-nav-item.is-active {
+      background: var(--bg-active);
+      color: var(--ink-1);
+      font-weight: 500;
+    }
+    .dk-nav-left { display: inline-flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
+    .dk-nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dk-nav-count { font-size: 11px; color: var(--ink-3); flex-shrink: 0; }
+    .dk-nav-item.is-active .dk-nav-count { color: var(--ink-2); }
+
+    .dk-rail-footer {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-panel);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .dk-user-block { min-width: 0; }
+    .dk-user-name { font-size: 12px; font-weight: 500; color: var(--ink-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dk-user-role { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Main Content Area */
+    .dk-main {
+      grid-area: main;
+      overflow-y: auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .dk-page-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .dk-page-title { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.015em; }
+    .dk-page-sub { margin: 2px 0 0; font-size: 12px; color: var(--ink-2); }
+    .dk-page-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .dk-content { padding: 16px 20px 28px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* Bottom 28px Telemetry Status Bar */
+    .dk-statusbar {
+      grid-area: foot;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--ink-3);
+      user-select: none;
+    }
+    .dk-status-group { display: flex; align-items: center; gap: 12px; }
+    .dk-status-item { display: inline-flex; align-items: center; gap: 5px; }
+
+    /* Buttons & Inputs */
+    .dk-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 29px;
+      padding: 0 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface);
+      color: var(--ink-1);
+      white-space: nowrap;
+      transition: background 100ms ease, border-color 100ms ease;
+    }
+    .dk-btn:hover { background: var(--bg-hover); }
+    .dk-btn:focus-visible, .dk-input:focus-visible, .dk-select:focus-visible, .dk-textarea:focus-visible {
+      outline: 1px solid var(--ink-1);
+      outline-offset: 1px;
+    }
+    .dk-btn-primary {
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border-color: var(--btn-bg);
+    }
+    .dk-btn-primary:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
+    .dk-btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-color: var(--danger-bd);
+    }
+    .dk-btn-danger:hover { background: var(--danger); color: #09090b; }
+    .dk-btn-ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--ink-2);
+    }
+    .dk-btn-ghost:hover { background: var(--bg-hover); color: var(--ink-1); }
+    .dk-btn-icon { width: 28px; height: 28px; padding: 0; }
+    .dk-btn-sm { height: 24px; padding: 0 8px; font-size: 11.5px; }
+    .dk-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .dk-input, .dk-select, .dk-textarea {
+      width: 100%;
+      height: 31px;
+      padding: 0 9px;
+      border-radius: 4px;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-strong);
+      color: var(--ink-1);
+      font-size: 12.5px;
+    }
+    .dk-textarea { height: auto; min-height: 92px; padding: 8px 9px; resize: vertical; line-height: 1.5; }
+
+    /* Badges & Status Dots */
+    .dk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.35;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--ink-2);
+      white-space: nowrap;
+    }
+    .dk-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .dk-badge-ok { color: var(--ok); background: var(--ok-bg); border-color: var(--ok-bd); }
+    .dk-badge-danger { color: var(--danger); background: var(--danger-bg); border-color: var(--danger-bd); }
+    .dk-badge-warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn-bd); }
+    .dk-badge-info { color: var(--info); background: var(--info-bg); border-color: var(--info-bd); }
+    .dk-badge-neutral { color: var(--ink-2); background: var(--bg-surface); border-color: var(--border); }
+
+    .dk-code {
+      padding: 1px 5px;
+      font-size: 11.5px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--ink-1);
+    }
+    .dk-masked {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 11px;
+      color: var(--ok);
+      background: var(--ok-bg);
+      border: 1px solid var(--ok-bd);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .dk-pre {
+      margin: 0;
+      padding: 11px 12px;
+      border-radius: 4px;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border);
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: var(--ink-1);
+      overflow-x: auto;
+      max-height: 280px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* 12-Column Architectural Grid & Panels */
+    .dk-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .dk-span-3 { grid-column: span 3; }
+    .dk-span-4 { grid-column: span 4; }
+    .dk-span-5 { grid-column: span 5; }
+    .dk-span-6 { grid-column: span 6; }
+    .dk-span-7 { grid-column: span 7; }
+    .dk-span-8 { grid-column: span 8; }
+    .dk-span-12 { grid-column: span 12; }
+
+    .dk-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .dk-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .dk-panel-head-left { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; min-width: 0; }
+    .dk-panel-title { font-size: 12.5px; font-weight: 600; margin: 0; }
+    .dk-panel-sub { font-size: 11px; color: var(--ink-3); margin: 1px 0 0; }
+    .dk-panel-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* KPI Tiles with Pure-SVG Sparklines */
+    .dk-kpi {
+      height: 100%;
+      padding: 13px 14px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      transition: border-color 120ms ease;
+    }
+    .dk-kpi:hover { border-color: var(--border-strong); }
+    .dk-kpi-top { display: flex; align-items: center; justify-content: space-between; color: var(--ink-2); font-size: 11.5px; }
+    .dk-kpi-mid { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+    .dk-kpi-val { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+    .dk-kpi-delta { font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dk-text-ok { color: var(--ok); }
+    .dk-text-danger { color: var(--danger); }
+    .dk-text-warn { color: var(--warn); }
+
+    /* Pure SVG Sparklines, Stat Bars & Donut Charts */
+    .dk-spark-line { fill: none; stroke: var(--chart-stroke); stroke-width: 1.5; }
+    .dk-spark-area { fill: var(--chart-fill); stroke: none; }
+    .dk-spark-ok .dk-spark-line { stroke: var(--ok); }
+    .dk-spark-ok .dk-spark-area { fill: var(--ok-bg); }
+    .dk-spark-warn .dk-spark-line { stroke: var(--warn); }
+    .dk-spark-warn .dk-spark-area { fill: var(--warn-bg); }
+    .dk-spark-danger .dk-spark-line { stroke: var(--danger); }
+    .dk-spark-danger .dk-spark-area { fill: var(--danger-bg); }
+
+    .dk-statbars { display: flex; flex-direction: column; gap: 11px; }
+    .dk-statbar-row { display: flex; flex-direction: column; gap: 5px; }
+    .dk-statbar-top { display: flex; align-items: center; justify-content: space-between; font-size: 12px; gap: 8px; }
+    .dk-statbar-svg { width: 100%; height: 6px; display: block; }
+    .dk-prog-track { fill: var(--bg-active); }
+    .dk-prog-fill-primary { fill: var(--chart-stroke); }
+    .dk-prog-fill-ok { fill: var(--ok); }
+    .dk-prog-fill-warn { fill: var(--warn); }
+    .dk-prog-fill-danger { fill: var(--danger); }
+    .dk-prog-fill-info { fill: var(--info); }
+    .dk-prog-fill-neutral { fill: var(--ink-3); }
+
+    .dk-donut-layout { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .dk-donut-ring-wrap { position: relative; flex-shrink: 0; }
+    .dk-donut-track { fill: none; stroke: var(--bg-surface); stroke-width: 14; }
+    .dk-donut-seg { fill: none; stroke-width: 14; transform: rotate(-90deg); transform-origin: 80px 80px; }
+    .dk-donut-seg.dk-tone-primary { stroke: var(--chart-stroke); }
+    .dk-donut-seg.dk-tone-ok { stroke: var(--ok); }
+    .dk-donut-seg.dk-tone-info { stroke: var(--info); }
+    .dk-donut-seg.dk-tone-warn { stroke: var(--warn); }
+    .dk-donut-seg.dk-tone-danger { stroke: var(--danger); }
+    .dk-donut-total { fill: var(--ink-1); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 18px; font-weight: 600; }
+    .dk-donut-sub { fill: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .dk-donut-legend { flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 7px; }
+    .dk-donut-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+    .dk-donut-key { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-1); }
+    .dk-legend-swatch { width: 8px; height: 8px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+    .dk-legend-swatch.dk-tone-primary { background: var(--chart-stroke); }
+    .dk-legend-swatch.dk-tone-ok { background: var(--ok); }
+    .dk-legend-swatch.dk-tone-info { background: var(--info); }
+    .dk-legend-swatch.dk-tone-warn { background: var(--warn); }
+    .dk-legend-swatch.dk-tone-danger { background: var(--danger); }
+    .dk-chart-empty { padding: 28px 16px; text-align: center; color: var(--ink-3); font-size: 12px; }
+
+    /* Callouts & Alerts */
+    .dk-callout {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-panel);
+      flex-wrap: wrap;
+    }
+    .dk-callout-body { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 12.5px; }
+    .dk-callout-danger { border-color: var(--danger-bd); background: var(--danger-bg); }
+    .dk-callout-danger strong { color: var(--danger); }
+    .dk-callout-warn { border-color: var(--warn-bd); background: var(--warn-bg); }
+    .dk-callout-warn strong { color: var(--warn); }
+    .dk-callout-ok { border-color: var(--ok-bd); background: var(--ok-bg); }
+    .dk-callout-ok strong { color: var(--ok); }
+
+    .dk-alert {
+      padding: 9px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface);
+      line-height: 1.5;
+    }
+    .dk-alert-ok { color: var(--ok); background: var(--ok-bg); border-color: var(--ok-bd); }
+    .dk-alert-danger { color: var(--danger); background: var(--danger-bg); border-color: var(--danger-bd); }
+    .dk-alert-warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn-bd); }
+    .dk-alert-info { color: var(--info); background: var(--info-bg); border-color: var(--info-bd); }
+
+    /* Tabs, Segmented Controls, Toolbars, Filter Chips */
+    .dk-tabs {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    .dk-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 36px;
+      padding: 0 10px;
+      font-size: 12px;
+      color: var(--ink-2);
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .dk-tab:hover { color: var(--ink-1); }
+    .dk-tab.is-active { color: var(--ink-1); font-weight: 500; border-bottom-color: var(--ink-1); }
+    .dk-tab-count {
+      font-size: 10.5px;
+      padding: 0 5px;
+      border-radius: 3px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--ink-2);
+    }
+
+    .dk-seg {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px;
+      border-radius: 4px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      gap: 2px;
+    }
+    .dk-seg-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 23px;
+      padding: 0 8px;
+      border-radius: 3px;
+      font-size: 11.5px;
+      color: var(--ink-2);
+    }
+    .dk-seg-btn:hover { color: var(--ink-1); }
+    .dk-seg-btn.is-active {
+      background: var(--bg-panel);
+      color: var(--ink-1);
+      border: 1px solid var(--border-strong);
+      font-weight: 500;
+    }
+
+    .dk-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .dk-toolbar-flat {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .dk-toolbar-left, .dk-toolbar-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .dk-toolbar .dk-select { width: auto; min-width: 150px; height: 29px; }
+    .dk-toolbar-flat .dk-input { width: 220px; height: 26px; font-size: 12px; }
+    .dk-search-box { position: relative; width: 240px; max-width: 100%; }
+    .dk-search-box .dk-input { padding-inline-start: 28px; height: 29px; }
+    .dk-search-icon { position: absolute; inset-inline-start: 8px; top: 7px; color: var(--ink-3); pointer-events: none; }
+
+    .dk-filter-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-canvas);
+      flex-wrap: wrap;
+    }
+    .dk-filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      font-size: 11px;
+    }
+
+    /* Hairline Data Table */
+    .dk-table-wrap { width: 100%; overflow-x: auto; }
+    .dk-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .dk-table th {
+      text-align: start;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--ink-2);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .dk-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: var(--ink-1);
+    }
+    .dk-table tbody tr { cursor: pointer; }
+    .dk-table tbody tr:hover { background: var(--bg-hover); }
+    .dk-table tbody tr.is-selected { background: var(--bg-active); }
+    .dk-table tbody tr.is-kb-focus { outline: 1px solid var(--ink-1); outline-offset: -1px; background: var(--bg-hover); }
+    [data-density="compact"] .dk-table th,
+    [data-density="compact"] .dk-table td { padding: 4px 10px; font-size: 12px; }
+    .dk-td-actions { text-align: end; white-space: nowrap; }
+    .dk-row-actions { display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
+    .dk-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      font-size: 12px;
+      color: var(--ink-2);
+      background: var(--bg-panel);
+    }
+    .dk-pag-btns { display: flex; align-items: center; gap: 6px; }
+
+    /* Diff Chips (Approvals & RFC 7396 Patch Preview) */
+    .dk-diff-list { display: flex; flex-direction: column; gap: 5px; }
+    .dk-diff-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-wrap: wrap;
+      font-size: 11.5px;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+    .dk-diff-key { color: var(--ink-2); }
+    .dk-diff-old {
+      padding: 0 5px;
+      border-radius: 3px;
+      color: var(--danger);
+      background: var(--danger-bg);
+      text-decoration: line-through;
+    }
+    .dk-diff-new {
+      padding: 0 5px;
+      border-radius: 3px;
+      color: var(--ok);
+      background: var(--ok-bg);
+    }
+
+    /* Plan Telemetry Strip */
+    .dk-plan-stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .dk-mini-stat {
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .dk-mini-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); }
+    .dk-mini-stat-val { font-size: 13.5px; font-weight: 600; }
+
+    /* Forms */
+    .dk-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .dk-field { display: flex; flex-direction: column; gap: 5px; }
+    .dk-field-full { grid-column: span 2; }
+    .dk-field label { font-size: 12px; font-weight: 500; color: var(--ink-1); display: flex; align-items: center; gap: 6px; }
+    .dk-help-text { font-size: 11px; color: var(--ink-3); line-height: 1.4; }
+    .dk-form-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+    /* Detail KV Grid */
+    .dk-kv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--border); }
+    .dk-kv-item { padding: 9px 14px; border-bottom: 1px solid var(--border); border-inline-end: 1px solid var(--border); }
+    .dk-kv-item:nth-child(even) { border-inline-end: 0; }
+    .dk-kv-key { font-size: 10.5px; color: var(--ink-3); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .dk-kv-val { font-size: 12px; word-break: break-word; }
+
+    /* Activity Rows */
+    .dk-activity-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dk-activity-row:last-child { border-bottom: 0; }
+    .dk-activity-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+    /* Right Slide-Over Inspector Drawer */
+    .dk-drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      z-index: 55;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .dk-drawer {
+      width: 540px;
+      max-width: 100vw;
+      height: 100%;
+      background: var(--bg-panel);
+      border-inline-start: 1px solid var(--border-strong);
+      display: flex;
+      flex-direction: column;
+    }
+    .dk-drawer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .dk-drawer-head-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .dk-drawer-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .dk-drawer-sec { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .dk-drawer-foot {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    /* Modals (Command Palette & Keyboard Shortcuts) */
+    .dk-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      z-index: 60;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 12vh;
+    }
+    .dk-modal {
+      width: 560px;
+      max-width: calc(100vw - 24px);
+      max-height: 82vh;
+      overflow-y: auto;
+      border-radius: 6px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-strong);
+    }
+    .dk-cmdk-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dk-cmdk-input { flex: 1; border: 0; background: transparent; outline: none; font-size: 13px; color: var(--ink-1); }
+    .dk-cmdk-list { max-height: 340px; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+    .dk-cmdk-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 9px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      text-align: start;
+      width: 100%;
+    }
+    .dk-cmdk-item:hover, .dk-cmdk-item.is-active { background: var(--bg-hover); }
+    .dk-cmdk-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 12px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--ink-3);
+    }
+    .dk-keys-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+    .dk-key-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+
+    /* Toasts */
+    .dk-toasts {
+      position: fixed;
+      inset-inline-end: 16px;
+      bottom: 40px;
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 380px;
+    }
+    .dk-toast {
+      padding: 8px 12px;
+      border-radius: 4px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-strong);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .dk-toast-ok { border-color: var(--ok-bd); color: var(--ok); }
+    .dk-toast-danger { border-color: var(--danger-bd); color: var(--danger); }
+    .dk-toast-warn { border-color: var(--warn-bd); color: var(--warn); }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .dk-span-3, .dk-span-4, .dk-span-5 { grid-column: span 6; }
+      .dk-span-7, .dk-span-8 { grid-column: span 12; }
+      .dk-plan-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      .dk-shell { grid-template-columns: 0 1fr; }
+      .dk-rail {
+        position: fixed;
+        top: 44px;
+        bottom: 28px;
+        inset-inline-start: 0;
+        width: 240px;
+        z-index: 48;
+        transform: translateX(-100%);
+        transition: transform 140ms ease;
+      }
+      .dk-shell.dk-mobile-open .dk-rail { transform: translateX(0); }
+      .dk-span-3, .dk-span-4, .dk-span-5, .dk-span-6, .dk-span-7, .dk-span-8, .dk-span-12 { grid-column: span 12; }
+      .dk-form-grid, .dk-kv-grid, .dk-keys-grid { grid-template-columns: 1fr; }
+      .dk-field-full { grid-column: span 1; }
+      .dk-ver, .dk-crumb-sep, .dk-crumb, .dk-status-hide-sm { display: none; }
+      .dk-cmdk-trigger { width: auto; gap: 6px; }
+      .dk-cmdk-trigger-text { display: none; }
+    }
+  </style>
 </head>
 <body data-base-path="{{BASE_PATH}}">
-<header>
-  <div class="brand">
-    <span class="brand-dot"></span>
-    <span>{{TITLE}}</span>
-    <span class="badge" id="pod-badge">pod: --</span>
-    <span class="badge ok" id="sse-badge">SSE: live</span>
-  </div>
-  <div class="toolbar">
-    <button id="btn-export-csv" type="button">Export CSV</button>
-    <button id="btn-theme" type="button">Swiss Light</button>
-    <button id="btn-refresh" class="primary" type="button">Refresh</button>
-  </div>
-</header>
+<div class="dk-shell" id="dk-shell">
+  <!-- 44px Topbar -->
+  <header class="dk-topbar">
+    <div class="dk-top-left">
+      <button type="button" class="dk-btn dk-btn-ghost dk-btn-icon" id="dk-rail-toggle" aria-label="Toggle sidebar" title="Toggle sidebar">
+        <svg class="dk-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="#overview" class="dk-brand" data-nav="overview">
+        <span class="dk-brand-mark" aria-hidden="true">D</span>
+        <span>spring-dlt-deck</span>
+      </a>
+      <span class="dk-ver dk-mono">v0.1</span>
+      <span class="dk-crumb-sep">/</span>
+      <span class="dk-crumb dk-crumb-cur" id="dk-crumb-cur">Operations Overview</span>
+    </div>
 
-<div class="container">
-  <div id="global-alert" class="alert"></div>
+    <button type="button" class="dk-cmdk-trigger" id="dk-cmdk-open" aria-label="Open command palette">
+      <span class="dk-cmdk-trigger-left">
+        <svg class="dk-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="dk-cmdk-trigger-text">Jump to view, topic, cluster, action…</span>
+      </span>
+      <kbd class="dk-kbd">⌘K</kbd>
+    </button>
 
-  <div class="lag-banner" id="lag-banner">
-    <span id="lag-summary">Ingestion Engine: checking... | Live Lag: 0</span>
-    <span id="topics-summary">Subscribed DLT Topics: none</span>
-  </div>
+    <div class="dk-top-right">
+      <span class="dk-badge dk-badge-ok dk-mono" id="dk-live-pill"><span class="dk-dot"></span>LIVE</span>
+      <button type="button" class="dk-btn dk-btn-ghost dk-btn-icon dk-status-hide-sm" id="dk-refresh-btn" title="Refresh data (r)" aria-label="Refresh">
+        <svg class="dk-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button type="button" class="dk-btn dk-btn-ghost dk-btn-icon dk-status-hide-sm" id="dk-keys-open" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+        <svg class="dk-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"/></svg>
+      </button>
+      <button type="button" class="dk-btn dk-btn-ghost dk-btn-icon" id="dk-theme-toggle" title="Toggle Carbon Dark / Swiss Light (t)" aria-label="Toggle theme">
+        <svg class="dk-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </header>
 
-  <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-label">Actionable DLT</div><div class="kpi-val" id="kpi-actionable">0</div></div>
-    <div class="kpi"><div class="kpi-label">Total Ingested</div><div class="kpi-val" id="kpi-total">0</div></div>
-    <div class="kpi"><div class="kpi-label">Clusters</div><div class="kpi-val" id="kpi-clusters">0</div></div>
-    <div class="kpi"><div class="kpi-label">Pending Approval</div><div class="kpi-val" id="kpi-pending">0</div></div>
-    <div class="kpi"><div class="kpi-label">INDETERMINATE</div><div class="kpi-val" id="kpi-indeterminate">0</div></div>
-    <div class="kpi"><div class="kpi-label">HoL Blocked / Paused</div><div class="kpi-val" id="kpi-blocked">0</div></div>
-  </div>
+  <!-- 228px Left Navigation Rail -->
+  <aside class="dk-rail" aria-label="Primary navigation">
+    <div class="dk-rail-scroll">
+      <div>
+        <div class="dk-rail-group-title">Workspace</div>
+        <nav class="dk-nav-list">
+          <button type="button" class="dk-nav-item is-active" data-nav="overview">
+            <span class="dk-nav-left">
+              <svg class="dk-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              <span class="dk-nav-label">Overview</span>
+            </span>
+          </button>
+        </nav>
+      </div>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="triage" type="button">1. Triage &amp; Poison-Pill Inspector</button>
-    <button class="tab" data-tab="plans" type="button">2. Replay Plans &amp; Four-Eyes Queue</button>
-    <button class="tab" data-tab="audit" type="button">3. Tamper-Evident Audit &amp; Merkle Verifier</button>
-  </div>
-
-  <section id="tab-triage" class="panel active">
-    <div class="split">
-      <div class="card">
-        <h3><span>Exception Clusters (Deduplicated)</span><button id="btn-clear-cluster" type="button">All</button></h3>
-        <div id="clusters-list">Loading clusters...</div>
+      <div class="dk-rail-filter-wrap">
+        <input type="search" id="dk-rail-filter" class="dk-input dk-rail-filter" placeholder="Filter views &amp; topics…" autocomplete="off" aria-label="Filter navigation">
       </div>
 
       <div>
-        <div class="card">
-          <h3>
-            <span>DLT Messages (Signed Keyset Cursor)</span>
-            <span class="toolbar">
-              <select id="status-filter">
-                <option value="">All Statuses</option>
-                <option value="NEW">NEW</option>
-                <option value="FAILED_PUBLISH">FAILED_PUBLISH</option>
-                <option value="INDETERMINATE">INDETERMINATE</option>
-                <option value="BLOCKED_BY_PRIOR_KEY_FAILURE">BLOCKED_BY_PRIOR_KEY_FAILURE</option>
-                <option value="QUARANTINED">QUARANTINED</option>
-                <option value="PUBLISHED">PUBLISHED</option>
-                <option value="RE_DLT_DETECTED">RE_DLT_DETECTED</option>
-                <option value="DISCARDED">DISCARDED</option>
-              </select>
-              <button id="btn-next-page" type="button" disabled>Next Page &rarr;</button>
+        <div class="dk-rail-group-title">DLT Triage</div>
+        <nav class="dk-nav-list">
+          <button type="button" class="dk-nav-item" data-nav="clusters" data-rail-label="exception clusters fingerprints">
+            <span class="dk-nav-left">
+              <svg class="dk-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              <span class="dk-nav-label">Exception Clusters</span>
             </span>
-          </h3>
-          <table>
-            <thead>
-              <tr><th>Coords</th><th>Format</th><th>Category</th><th>Status</th><th>Hops</th><th>Ingested</th></tr>
-            </thead>
-            <tbody id="messages-tbody"></tbody>
-          </table>
-        </div>
+            <span class="dk-nav-count dk-mono dk-tabular" id="nav-count-clusters">0</span>
+          </button>
+          <button type="button" class="dk-nav-item" data-nav="messages" data-rail-label="messages records poison pill">
+            <span class="dk-nav-left">
+              <svg class="dk-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+              <span class="dk-nav-label">Messages</span>
+            </span>
+            <span class="dk-nav-count dk-mono dk-tabular" id="nav-count-messages">0</span>
+          </button>
+        </nav>
+      </div>
 
-        <div class="card" id="inspector-card">
-          <h3>
-            <span>Message Inspector</span>
-            <span id="inspector-badges" class="toolbar"></span>
-          </h3>
-          <div id="inspector-empty">Select a DLT message above to inspect payload, headers, RFC 7396 merge patch, or run Honest 3-Tier Dry-Run.</div>
-          <div id="inspector-body" hidden>
-            <div class="row-actions">
-              <button id="btn-unmask" type="button">Unmask PII (APPROVER Audited)</button>
-              <button id="btn-discard" class="danger" type="button">Discard</button>
-              <button id="btn-resolve-new" type="button">Resolve &rarr; NEW</button>
-              <button id="btn-resolve-pub" type="button">Resolve &rarr; PUBLISHED</button>
-            </div>
-            <h3 class="mt-12">Payload Preview</h3>
-            <pre id="insp-payload"></pre>
-            <h3 class="mt-10">Headers &amp; CloudEvents</h3>
-            <pre id="insp-headers"></pre>
-            <h3 class="mt-10">Canonical Stacktrace</h3>
-            <pre id="insp-stack"></pre>
+      <div id="dk-rail-topics-wrap">
+        <div class="dk-rail-group-title">Subscribed Topics</div>
+        <nav class="dk-nav-list" id="dk-rail-topics">
+          <div class="dk-nav-item dk-subtle"><span class="dk-nav-label">Discovering *.dlt…</span></div>
+        </nav>
+      </div>
 
-            <h3 class="mt-12">RFC 7396 Merge Patch &amp; Honest 3-Tier Dry-Run Lab</h3>
-            <div id="not-patchable-banner" class="alert warn"></div>
-            <textarea id="patch-editor" class="patch-editor" rows="3" placeholder='{"currency": "TRY"}'></textarea>
-            <div class="row-actions">
-              <button id="btn-patch-preview" type="button">Preview Patch Diff</button>
-              <button id="btn-dry-t1" class="primary" type="button">Tier-1 Dry-Run (Validate)</button>
-              <button id="btn-dry-t2" type="button">Tier-2 Dry-Run (Handler SPI)</button>
-              <input id="canary-topic-input" type="text" placeholder="orders.canary">
-              <button id="btn-dry-t3" type="button">Tier-3 Canary Replay</button>
-            </div>
-            <pre id="dryrun-output" class="mt-8">Dry-run and diff output appears here.</pre>
-          </div>
-        </div>
+      <div>
+        <div class="dk-rail-group-title">Governance</div>
+        <nav class="dk-nav-list">
+          <button type="button" class="dk-nav-item" data-nav="approvals" data-rail-label="approval queue replay plans four eyes">
+            <span class="dk-nav-left">
+              <svg class="dk-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span class="dk-nav-label">Approval Queue</span>
+            </span>
+            <span class="dk-nav-count dk-mono dk-tabular" id="nav-count-approvals">0</span>
+          </button>
+          <button type="button" class="dk-nav-item" data-nav="draft" data-rail-label="draft replay plan merge patch">
+            <span class="dk-nav-left">
+              <svg class="dk-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+              <span class="dk-nav-label">Draft Replay Plan</span>
+            </span>
+          </button>
+          <button type="button" class="dk-nav-item" data-nav="audit" data-rail-label="audit ledger sha256 merkle chain">
+            <span class="dk-nav-left">
+              <svg class="dk-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span class="dk-nav-label">Audit Ledger</span>
+            </span>
+            <span class="dk-nav-count dk-mono" id="nav-audit-state">OK</span>
+          </button>
+        </nav>
       </div>
     </div>
-  </section>
 
-  <section id="tab-plans" class="panel">
-    <div class="card">
-      <h3>Draft Key-Ordered Replay Plan (Frozen Snapshot + SHA-256 planSpecHash)</h3>
-      <div class="form-grid">
-        <div class="field"><label>Plan Name</label><input id="plan-name" type="text" placeholder="Recover Orders Validation Batch"></div>
-        <div class="field"><label>Target Topic (Validated via AdminClient)</label><input id="plan-target" type="text" placeholder="orders.events"></div>
-        <div class="field"><label>DLT Topic Filter</label><input id="plan-dlt-topic" type="text" placeholder="orders.events.dlt"></div>
-        <div class="field"><label>Fingerprint Filter (Optional)</label><input id="plan-fp" type="text" placeholder="sha256..."></div>
-        <div class="field"><label>Ordering Mode</label>
-          <select id="plan-ordering">
-            <option value="PRESERVE_KEY_ORDER">PRESERVE_KEY_ORDER (Striped + HoL Barrier)</option>
-            <option value="UNORDERED_FAST">UNORDERED_FAST</option>
-          </select>
-        </div>
-        <div class="field"><label>Rate Limit (msg/sec)</label><input id="plan-rate" type="number" value="50"></div>
-        <div class="field"><label>Max Records</label><input id="plan-max" type="number" value="500"></div>
-        <div class="field"><label>Optional RFC 7396 Patch JSON</label><input id="plan-patch" type="text" placeholder='{"currency":"TRY"}'></div>
+    <div class="dk-rail-footer">
+      <div class="dk-user-block">
+        <div class="dk-user-name" id="dk-actor-name">authenticated</div>
+        <div class="dk-user-role dk-mono" id="dk-actor-role">VIEWER</div>
       </div>
-      <button id="btn-draft-plan" class="primary" type="button">Draft Replay Plan</button>
+      <span class="dk-badge dk-badge-neutral dk-mono" id="dk-pod-chip">pod</span>
     </div>
+  </aside>
 
-    <div class="card">
-      <h3>Replay Plans &amp; Four-Eyes Approval Queue</h3>
-      <table>
-        <thead>
-          <tr><th>Name</th><th>Target</th><th>Mode</th><th>Snapshot / Hash</th><th>Maker &rarr; Checker</th><th>Progress (Pub/Fail/Indet/HoL/ReDLT)</th><th>Status</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="plans-tbody"></tbody>
-      </table>
-    </div>
-  </section>
+  <!-- Main Workspace -->
+  <main class="dk-main" id="dk-main"></main>
 
-  <section id="tab-audit" class="panel">
-    <div class="card">
-      <h3>
-        <span>Tamper-Evident SHA-256 Audit Ledger &amp; Batch Merkle Checkpoints</span>
-        <button id="btn-verify-audit" class="primary" type="button">Verify Cryptographic Chain</button>
-      </h3>
-      <div id="audit-verify-banner" class="alert"></div>
-      <table>
-        <thead>
-          <tr><th>Seq</th><th>Time</th><th>Actor (Role)</th><th>Action</th><th>Target</th><th>Merkle Root</th><th>Entry Hash</th></tr>
-        </thead>
-        <tbody id="audit-tbody"></tbody>
-      </table>
+  <!-- 28px Live Telemetry Status Bar -->
+  <footer class="dk-statusbar dk-mono dk-tabular">
+    <div class="dk-status-group">
+      <span class="dk-status-item">Java 25 LTS</span>
+      <span class="dk-status-item dk-status-hide-sm">Spring Boot 4.2</span>
+      <span class="dk-status-item">Kafka 4.4 KIP-848</span>
+      <span class="dk-status-item" id="st-lag">lag 0</span>
+      <span class="dk-status-item dk-status-hide-sm" id="st-pod">pod —</span>
     </div>
-  </section>
+    <div class="dk-status-group">
+      <span class="dk-status-item dk-status-hide-sm" id="st-role">role: —</span>
+      <span class="dk-status-item dk-status-hide-sm">CSP: strict nonce</span>
+      <span class="dk-status-item dk-status-hide-sm">CSRF: active</span>
+      <span class="dk-status-item" id="st-audit">audit: verifying…</span>
+    </div>
+  </footer>
 </div>
 
-<script nonce="{{CSP_NONCE}}">
-(() => {
-  const base = document.body.dataset.basePath || '/dlt-deck';
-  const state = { selectedCluster: null, selectedMessageId: null, selectedMessage: null, nextCursor: null };
+<!-- Right-Hand Slide-Over Message Inspector Drawer -->
+<div class="dk-drawer-backdrop" id="dk-drawer-backdrop" hidden="hidden" role="dialog" aria-modal="true" aria-label="Message Inspector">
+  <div class="dk-drawer">
+    <div class="dk-drawer-head">
+      <div class="dk-drawer-head-left">
+        <strong id="dk-drawer-title">Message Inspector</strong>
+        <span class="dk-badge dk-mono" id="dk-drawer-status">—</span>
+      </div>
+      <button type="button" class="dk-btn dk-btn-ghost dk-btn-icon" id="dk-drawer-close" aria-label="Close inspector">
+        <svg class="dk-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dk-tabs" id="dk-drawer-tabs">
+      <button type="button" class="dk-tab is-active" data-dtab="overview">Overview</button>
+      <button type="button" class="dk-tab" data-dtab="patch">Patch &amp; Dry-Run</button>
+      <button type="button" class="dk-tab" data-dtab="headers">Headers &amp; Stack</button>
+    </div>
+    <div class="dk-drawer-body" id="dk-drawer-body"></div>
+    <div class="dk-drawer-foot" id="dk-drawer-foot"></div>
+  </div>
+</div>
 
-  const $ = (id) => document.getElementById(id);
+<!-- ⌘K Command Palette Modal -->
+<div class="dk-backdrop" id="dk-cmdk-backdrop" hidden="hidden" role="dialog" aria-modal="true" aria-label="Command Palette">
+  <div class="dk-modal">
+    <div class="dk-cmdk-head">
+      <svg class="dk-icon dk-subtle" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="dk-cmdk-input" class="dk-cmdk-input" placeholder="Jump to view, topic, action…" autocomplete="off">
+      <button type="button" class="dk-btn dk-btn-ghost dk-btn-sm" id="dk-cmdk-close">ESC</button>
+    </div>
+    <div class="dk-cmdk-list" id="dk-cmdk-list"></div>
+    <div class="dk-cmdk-foot dk-mono">
+      <span>↑↓ navigate · ↵ select · esc close</span>
+      <span>RBAC-scoped control plane</span>
+    </div>
+  </div>
+</div>
+
+<!-- Keyboard Shortcuts Cheat Sheet Modal (?) -->
+<div class="dk-backdrop" id="dk-keys-backdrop" hidden="hidden" role="dialog" aria-modal="true" aria-label="Keyboard Shortcuts">
+  <div class="dk-modal">
+    <div class="dk-panel-head">
+      <strong>Keyboard Shortcuts</strong>
+      <button type="button" class="dk-btn dk-btn-ghost dk-btn-icon" id="dk-keys-close" aria-label="Close">
+        <svg class="dk-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dk-panel-body">
+      <div class="dk-keys-grid">
+        <div class="dk-key-row"><span>Command Palette</span><kbd class="dk-kbd">⌘K</kbd></div>
+        <div class="dk-key-row"><span>Toggle Dark / Light</span><kbd class="dk-kbd">t</kbd></div>
+        <div class="dk-key-row"><span>Refresh Active View</span><kbd class="dk-kbd">r</kbd></div>
+        <div class="dk-key-row"><span>Close Drawer / Modal</span><kbd class="dk-kbd">Esc</kbd></div>
+        <div class="dk-key-row"><span>Next / Prev Message Row</span><span><kbd class="dk-kbd">j</kbd> <kbd class="dk-kbd">k</kbd></span></div>
+        <div class="dk-key-row"><span>Inspect Focused Row</span><kbd class="dk-kbd">Enter</kbd></div>
+        <div class="dk-key-row"><span>Go to Overview / Clusters</span><span><kbd class="dk-kbd">1</kbd> <kbd class="dk-kbd">2</kbd></span></div>
+        <div class="dk-key-row"><span>Go to Messages / Approvals</span><span><kbd class="dk-kbd">3</kbd> <kbd class="dk-kbd">4</kbd></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dk-toasts" id="dk-toasts" aria-live="polite"></div>
+
+<script nonce="{{CSP_NONCE}}">
+(function () {
+  "use strict";
+
+  const BASE = (document.body.getAttribute("data-base-path") || "/dlt-deck").replace(/\/$/, "");
+  const API = BASE + "/api";
+
+  const state = {
+    view: "overview",
+    overview: null,
+    clusters: [],
+    messages: [],
+    allMessagesSample: [],
+    nextCursor: null,
+    plans: [],
+    audit: [],
+    auditVerify: null,
+    filterTopic: "",
+    filterStatus: "",
+    filterFingerprint: "",
+    searchText: "",
+    planFilter: "all",
+    density: localStorage.getItem("dlt_deck_density") || "comfortable",
+    kbIndex: -1,
+    drawerOpen: false,
+    drawerTab: "overview",
+    inspected: null,
+    patchDraft: "",
+    patchResult: null,
+    dryRunTier: "TIER_1_VALIDATE",
+    dryRunTarget: "",
+    dryRunResult: null,
+    draftForm: {
+      name: "",
+      dltTopicFilter: "",
+      fingerprintFilter: "",
+      targetTopic: "",
+      orderingMode: "PRESERVE_KEY_ORDER",
+      rateLimitPerSec: 100,
+      maxRecords: 200,
+      payloadPatchJson: ""
+    },
+    cmdkIdx: 0,
+    cmdkItems: []
+  };
+
+  /* Theme & Density Initialization */
+  (function initTheme() {
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      const qTheme = qs.get("theme");
+      const saved = localStorage.getItem("dlt_deck_theme");
+      const theme = (qTheme === "light" || qTheme === "dark")
+        ? qTheme
+        : ((saved === "light" || saved === "dark") ? saved : "dark");
+      document.documentElement.setAttribute("data-theme", theme);
+      if (state.density === "compact") {
+        document.documentElement.setAttribute("data-density", "compact");
+      }
+      const qView = qs.get("view");
+      if (qView && ["overview", "clusters", "messages", "approvals", "draft", "audit"].includes(qView)) {
+        state.view = qView;
+      }
+    } catch (_) {}
+  })();
+
+  /* Safe Helpers */
+  function esc(v) {
+    if (v === null || v === undefined) return "";
+    return String(v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function num(n) {
+    const x = Number(n || 0);
+    return Number.isFinite(x) ? x.toLocaleString("en-US") : "0";
+  }
+
+  function shortId(id) {
+    return id ? String(id).slice(0, 8) : "—";
+  }
+
+  function shortHash(h) {
+    return h ? String(h).slice(0, 14) : "—";
+  }
+
+  function shortClass(fqcn) {
+    if (!fqcn) return "UnknownException";
+    const parts = String(fqcn).split(".");
+    return parts[parts.length - 1] || fqcn;
+  }
+
+  function fmtTime(iso) {
+    if (!iso) return "—";
+    try {
+      const d = new Date(iso);
+      return d.toISOString().replace("T", " ").slice(0, 19);
+    } catch (_) {
+      return String(iso);
+    }
+  }
+
+  function statusTone(st) {
+    switch (String(st || "").toUpperCase()) {
+      case "PUBLISHED":
+      case "COMPLETED":
+      case "APPROVED":
+        return "ok";
+      case "INDETERMINATE":
+      case "FAILED_PUBLISH":
+      case "PAUSED_BLAST_RADIUS":
+      case "REJECTED":
+      case "RE_DLT_DETECTED":
+        return "danger";
+      case "QUARANTINED":
+      case "PENDING_APPROVAL":
+      case "BLOCKED_BY_PRIOR_KEY_FAILURE":
+      case "CLAIMED":
+      case "RUNNING":
+        return "warn";
+      case "NEW":
+        return "info";
+      default:
+        return "neutral";
+    }
+  }
+
+  function categoryTone(cat) {
+    switch (String(cat || "").toUpperCase()) {
+      case "DESERIALIZATION":
+      case "POISON_DATA":
+      case "AUTH_PERMISSION":
+        return "danger";
+      case "VALIDATION":
+      case "SCHEMA_MISMATCH":
+      case "REPLAY_LOOP":
+        return "warn";
+      case "TRANSIENT_DOWNSTREAM":
+        return "info";
+      default:
+        return "neutral";
+    }
+  }
+
+  function badgeHtml(text, tone, mono) {
+    const m = mono ? " dk-mono" : "";
+    return '<span class="dk-badge dk-badge-' + esc(tone || "neutral") + m + '"><span class="dk-dot"></span>' + esc(text) + '</span>';
+  }
 
   function readCookie(name) {
-    const match = document.cookie.split('; ').find(r => r.startsWith(name + '='));
-    return match ? decodeURIComponent(match.split('=')[1]) : '';
+    const m = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : "";
   }
 
-  function showAlert(msg, kind) {
-    const el = $('global-alert');
-    el.textContent = msg;
-    el.className = 'alert show ' + kind;
-    setTimeout(() => el.classList.remove('show'), 8000);
-  }
-
-  async function api(path, options = {}) {
-    const headers = Object.assign({ 'Accept': 'application/json' }, options.headers || {});
-    if (options.method && options.method !== 'GET') {
-      headers['Content-Type'] = 'application/json';
-      const xsrf = readCookie('XSRF-TOKEN');
-      if (xsrf) headers['X-XSRF-TOKEN'] = xsrf;
+  async function api(path, opts) {
+    const o = Object.assign({ credentials: "same-origin", headers: {} }, opts || {});
+    if (o.method && o.method !== "GET" && o.method !== "HEAD") {
+      o.headers["Content-Type"] = "application/json";
+      const xsrf = readCookie("XSRF-TOKEN");
+      if (xsrf) o.headers["X-XSRF-TOKEN"] = xsrf;
     }
-    const res = await fetch(base + path, Object.assign({}, options, { headers, credentials: 'same-origin' }));
-    const text = await res.text();
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    const res = await fetch(API + path, o);
+    const ct = res.headers.get("content-type") || "";
+    const data = ct.includes("json") ? await res.json() : await res.text();
     if (!res.ok) {
-      const detail = data && data.detail ? `${data.title || res.status}: ${data.detail}` : `HTTP ${res.status}`;
-      showAlert(detail, 'err');
-      throw new Error(detail);
+      const msg = (data && typeof data === "object")
+        ? ((data.errorCode || data.title || "HTTP " + res.status) + ": " + (data.detail || "Request failed"))
+        : ("HTTP " + res.status);
+      throw new Error(msg);
     }
     return data;
   }
 
-  function statusBadge(status) {
-    const span = document.createElement('span');
-    span.textContent = status;
-    let cls = 'badge';
-    if (status === 'PUBLISHED' || status === 'COMPLETED') cls += ' ok';
-    else if (status === 'INDETERMINATE' || status === 'PAUSED_BLAST_RADIUS' || status === 'QUARANTINED' || status === 'RE_DLT_DETECTED') cls += ' err';
-    else if (status === 'BLOCKED_BY_PRIOR_KEY_FAILURE' || status === 'PENDING_APPROVAL' || status === 'FAILED_PUBLISH') cls += ' warn';
-    span.className = cls;
-    return span;
+  function toast(msg, tone) {
+    const host = document.getElementById("dk-toasts");
+    const el = document.createElement("div");
+    el.className = "dk-toast" + (tone ? " dk-toast-" + tone : "");
+    const span = document.createElement("span");
+    span.textContent = msg;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dk-btn dk-btn-ghost dk-btn-sm";
+    btn.textContent = "×";
+    btn.addEventListener("click", function () { el.remove(); });
+    el.appendChild(span);
+    el.appendChild(btn);
+    host.appendChild(el);
+    setTimeout(function () { if (el.parentNode) el.remove(); }, 5200);
   }
 
-  async function loadOverview() {
-    const o = await api('/api/overview');
-    $('pod-badge').textContent = 'pod: ' + o.podId;
-    $('kpi-actionable').textContent = o.actionableMessages;
-    $('kpi-total').textContent = o.totalMessages;
-    $('kpi-clusters').textContent = o.clusterCount;
-    $('kpi-pending').textContent = o.pendingApprovalPlans;
-    $('kpi-indeterminate').textContent = o.indeterminateCount;
-    $('kpi-blocked').textContent = `${o.blockedHolCount} / ${o.pausedBlastRadiusPlans}`;
-    $('lag-summary').textContent = `Ingestion: ${o.ingestionRunning ? 'RUNNING' : 'STOPPED'} | Live Lag: ${o.totalIngestionLag} msgs`;
-    $('topics-summary').textContent = 'Topics: ' + (o.subscribedTopics && o.subscribedTopics.length ? o.subscribedTopics.join(', ') : 'none');
-  }
-
-  async function loadClusters() {
-    const clusters = await api('/api/clusters?limit=50');
-    const host = $('clusters-list');
-    host.textContent = '';
-    if (!clusters.length) {
-      host.textContent = 'No DLT exception clusters ingested yet.';
-      return;
-    }
-    clusters.forEach(c => {
-      const div = document.createElement('div');
-      div.className = 'cluster-item' + (state.selectedCluster === c.fingerprint ? ' selected' : '');
-      const title = document.createElement('div');
-      title.className = 'cluster-title';
-      title.textContent = `${c.rootCauseFqcn || c.exceptionFqcn || 'UnknownException'} (${c.totalCount} total / ${c.newCount} new)`;
-      const meta = document.createElement('div');
-      meta.className = 'row-actions';
-      const cat = document.createElement('span');
-      cat.className = 'badge purple';
-      cat.textContent = c.failureCategory;
-      const fp = document.createElement('span');
-      fp.className = 'badge';
-      fp.textContent = c.fingerprint.slice(0, 12);
-      meta.append(cat, fp);
-      const rec = document.createElement('div');
-      rec.className = 'cluster-rec';
-      rec.textContent = c.recommendation;
-      div.append(title, meta, rec);
-      div.addEventListener('click', () => {
-        state.selectedCluster = c.fingerprint;
-        $('plan-fp').value = c.fingerprint;
-        loadClusters();
-        loadMessages(null);
-      });
-      host.appendChild(div);
+  /* Pure-SVG Sparkline Builder (Zero inline style=) */
+  function sparkSvg(points, toneClass) {
+    const w = 78, h = 24;
+    const max = Math.max.apply(null, points.concat([1]));
+    const min = Math.min.apply(null, points.concat([0]));
+    const span = Math.max(1, max - min);
+    const step = points.length > 1 ? (w - 4) / (points.length - 1) : 0;
+    const coords = points.map(function (v, i) {
+      const x = (2 + i * step).toFixed(1);
+      const y = (h - 3 - ((v - min) / span) * (h - 6)).toFixed(1);
+      return x + "," + y;
     });
+    const lineD = "M" + coords.join(" L");
+    const areaD = lineD + " L" + (w - 2) + "," + (h - 2) + " L2," + (h - 2) + " Z";
+    return '<svg width="78" height="24" viewBox="0 0 78 24" class="' + esc(toneClass || "") + '" aria-hidden="true">'
+      + '<path class="dk-spark-area" d="' + areaD + '"/>'
+      + '<path class="dk-spark-line" d="' + lineD + '"/>'
+      + '</svg>';
+  }
+
+  /* Pure-SVG Donut Chart Builder (Exact flask-deck geometry) */
+  function renderDonut(segments, totalLabel, subLabel) {
+    const total = segments.reduce(function (acc, s) { return acc + s.value; }, 0);
+    if (!total) {
+      return '<div class="dk-chart-empty">No DLT messages ingested yet.</div>';
+    }
+    const r = 58;
+    const circ = 2 * Math.PI * r;
+    let offset = 0;
+    let arcs = "";
+    let legend = "";
+    segments.forEach(function (seg) {
+      if (seg.value <= 0) return;
+      const frac = seg.value / total;
+      const len = Math.max(2, frac * circ);
+      arcs += '<circle cx="80" cy="80" r="' + r + '" class="dk-donut-seg dk-tone-' + esc(seg.tone) + '"'
+        + ' stroke-dasharray="' + len.toFixed(2) + ' ' + circ.toFixed(2) + '"'
+        + ' stroke-dashoffset="' + (-offset).toFixed(2) + '"/>';
+      offset += len;
+      const pct = Math.round(frac * 100);
+      legend += '<div class="dk-donut-row">'
+        + '<span class="dk-donut-key"><span class="dk-legend-swatch dk-tone-' + esc(seg.tone) + '"></span>' + esc(seg.label) + '</span>'
+        + '<span class="dk-mono dk-tabular dk-muted">' + num(seg.value) + ' <span class="dk-subtle">(' + pct + '%)</span></span>'
+        + '</div>';
+    });
+    return '<div class="dk-donut-layout">'
+      + '<div class="dk-donut-ring-wrap">'
+      + '<svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="Message status split">'
+      + '<circle cx="80" cy="80" r="' + r + '" class="dk-donut-track"/>'
+      + arcs
+      + '<text x="80" y="77" text-anchor="middle" class="dk-donut-total">' + esc(totalLabel) + '</text>'
+      + '<text x="80" y="94" text-anchor="middle" class="dk-donut-sub">' + esc(subLabel) + '</text>'
+      + '</svg>'
+      + '</div>'
+      + '<div class="dk-donut-legend">' + legend + '</div>'
+      + '</div>';
+  }
+
+  /* Pure-SVG Horizontal Stat Bars */
+  function renderStatBars(items) {
+    const total = items.reduce(function (a, b) { return a + b.value; }, 0);
+    if (!total) {
+      return '<div class="dk-chart-empty">No exception fingerprints recorded yet.</div>';
+    }
+    return '<div class="dk-statbars">' + items.map(function (it) {
+      const pct = Math.max(2, Math.round((it.value / total) * 100));
+      return '<div class="dk-statbar-row">'
+        + '<div class="dk-statbar-top">'
+        + '<span>' + badgeHtml(it.label, it.tone, true) + ' <span class="dk-subtle dk-mono">' + esc(it.meta || "") + '</span></span>'
+        + '<span class="dk-mono dk-tabular">' + num(it.value) + ' <span class="dk-subtle">(' + Math.round((it.value / total) * 100) + '%)</span></span>'
+        + '</div>'
+        + '<svg class="dk-statbar-svg" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true">'
+        + '<rect x="0" y="0" width="100" height="6" rx="2" class="dk-prog-track"/>'
+        + '<rect x="0" y="0" width="' + pct + '" height="6" rx="2" class="dk-prog-fill-' + esc(it.tone) + '"/>'
+        + '</svg>'
+        + '</div>';
+    }).join("") + '</div>';
+  }
+
+  /* Data Loading */
+  async function loadAll() {
+    try {
+      const [ov, cl, msgPage, plans, audit, verify] = await Promise.all([
+        api("/overview"),
+        api("/clusters?limit=50"),
+        api("/messages?limit=200"),
+        api("/plans?limit=50"),
+        api("/audit?limit=50"),
+        api("/audit/verify")
+      ]);
+      state.overview = ov;
+      state.clusters = cl || [];
+      state.allMessagesSample = (msgPage && msgPage.items) ? msgPage.items : [];
+      state.plans = plans || [];
+      state.audit = audit || [];
+      state.auditVerify = verify;
+      updateChrome();
+      if (state.view === "messages") {
+        await loadMessages(null);
+      } else {
+        renderView();
+      }
+    } catch (e) {
+      toast(e.message, "danger");
+    }
   }
 
   async function loadMessages(cursor) {
-    const params = new URLSearchParams({ limit: '25' });
-    if (state.selectedCluster) params.set('fingerprint', state.selectedCluster);
-    const st = $('status-filter').value;
-    if (st) params.set('status', st);
-    if (cursor) params.set('cursor', cursor);
-
-    const page = await api('/api/messages?' + params.toString());
-    state.nextCursor = page.hasMore ? page.nextCursor : null;
-    $('btn-next-page').disabled = !state.nextCursor;
-
-    const tbody = $('messages-tbody');
-    tbody.textContent = '';
-    page.items.forEach(m => {
-      const tr = document.createElement('tr');
-      tr.className = 'clickable';
-      const tdCoords = document.createElement('td');
-      tdCoords.textContent = `${m.dltTopic}[${m.dltPartition}]@${m.dltOffset}`;
-      const tdFmt = document.createElement('td');
-      tdFmt.textContent = m.schemaId ? `${m.payloadFormat} (#${m.schemaId})` : m.payloadFormat;
-      const tdCat = document.createElement('td');
-      tdCat.textContent = m.failureCategory;
-      const tdSt = document.createElement('td');
-      tdSt.appendChild(statusBadge(m.status));
-      const tdHops = document.createElement('td');
-      tdHops.textContent = String(m.replayHops);
-      const tdTime = document.createElement('td');
-      tdTime.textContent = m.ingestedAt ? m.ingestedAt.replace('T', ' ').slice(0, 19) : '';
-      tr.append(tdCoords, tdFmt, tdCat, tdSt, tdHops, tdTime);
-      tr.addEventListener('click', () => inspectMessage(m.id, false));
-      tbody.appendChild(tr);
-    });
-  }
-
-  async function inspectMessage(id, unmask) {
-    const detail = await api(`/api/messages/${id}?unmask=${unmask}`);
-    state.selectedMessageId = id;
-    state.selectedMessage = detail;
-    $('inspector-empty').hidden = true;
-    $('inspector-body').hidden = false;
-
-    const badges = $('inspector-badges');
-    badges.textContent = '';
-    badges.appendChild(statusBadge(detail.summary.status));
-    const pii = document.createElement('span');
-    pii.className = 'badge ' + (detail.piiRedacted ? 'ok' : 'warn');
-    pii.textContent = detail.piiRedacted ? 'PII REDACTED' : 'PII UNMASKED (AUDITED)';
-    badges.appendChild(pii);
-    if (detail.schemaId) {
-      const sb = document.createElement('span');
-      sb.className = 'badge purple';
-      sb.textContent = 'Confluent Schema #' + detail.schemaId;
-      badges.appendChild(sb);
-    }
-    if (!detail.patchable) {
-      const np = document.createElement('span');
-      np.className = 'badge err';
-      np.textContent = 'NOT_PATCHABLE';
-      badges.appendChild(np);
-    }
-
-    $('insp-payload').textContent = detail.payloadPreview || '<empty>';
-    $('insp-headers').textContent = JSON.stringify({
-      key: detail.messageKey,
-      cloudEventType: detail.cloudEventType,
-      cloudEventId: detail.cloudEventId,
-      headers: detail.headers
-    }, null, 2);
-    $('insp-stack').textContent = detail.canonicalStacktrace || detail.sampleMessage || 'No stacktrace captured.';
-
-    const npBanner = $('not-patchable-banner');
-    if (!detail.patchable) {
-      npBanner.textContent = `Binary/non-JSON guard active (${detail.payloadFormat}): RFC 7396 merge patching is blocked to prevent payload corruption.`;
-      npBanner.className = 'alert show err';
-      $('btn-patch-preview').disabled = true;
-    } else {
-      npBanner.className = 'alert';
-      $('btn-patch-preview').disabled = false;
-    }
-    if (detail.summary.originalTopic) {
-      $('canary-topic-input').value = detail.summary.originalTopic + '.canary';
-      $('plan-target').value = detail.summary.originalTopic;
-      $('plan-dlt-topic').value = detail.summary.dltTopic;
-    }
-  }
-
-  async function loadPlans() {
-    const plans = await api('/api/plans?limit=50');
-    const tbody = $('plans-tbody');
-    tbody.textContent = '';
-    plans.forEach(p => {
-      const tr = document.createElement('tr');
-      const cells = [
-        p.name,
-        p.targetTopic,
-        p.orderingMode,
-        `${p.snapshotCount} msgs / ${p.planSpecHash.slice(0, 10)}`,
-        `${p.createdBy} -> ${p.approvedBy || 'awaiting'}`,
-        `${p.totalPublished} / ${p.totalFailed} / ${p.totalIndeterminate} / ${p.totalBlockedHol} / ${p.totalReDlt}`
-      ];
-      cells.forEach(text => {
-        const td = document.createElement('td');
-        td.textContent = text;
-        tr.appendChild(td);
-      });
-      const tdSt = document.createElement('td');
-      tdSt.appendChild(statusBadge(p.status));
-      tr.appendChild(tdSt);
-
-      const tdAct = document.createElement('td');
-      if (p.status === 'PENDING_APPROVAL') {
-        const btnApp = document.createElement('button');
-        btnApp.className = 'primary';
-        btnApp.textContent = 'Approve';
-        btnApp.addEventListener('click', async () => {
-          await api(`/api/plans/${p.id}/approve`, {
-            method: 'POST',
-            body: JSON.stringify({ expectedSpecHash: p.planSpecHash, executeAsync: true })
-          });
-          showAlert('Plan approved and dispatched for striped virtual-thread replay.', 'ok');
-          refreshAll();
-        });
-        const btnRej = document.createElement('button');
-        btnRej.className = 'danger';
-        btnRej.textContent = 'Reject';
-        btnRej.addEventListener('click', async () => {
-          await api(`/api/plans/${p.id}/reject`, {
-            method: 'POST',
-            body: JSON.stringify({ reason: 'Rejected via workbench' })
-          });
-          showAlert('Plan rejected.', 'ok');
-          refreshAll();
-        });
-        tdAct.append(btnApp, ' ', btnRej);
-      }
-      tr.appendChild(tdAct);
-      tbody.appendChild(tr);
-    });
-  }
-
-  async function loadAudit() {
-    const entries = await api('/api/audit?limit=100');
-    const tbody = $('audit-tbody');
-    tbody.textContent = '';
-    entries.forEach(e => {
-      const tr = document.createElement('tr');
-      [
-        String(e.sequenceNo),
-        e.createdAt ? e.createdAt.replace('T', ' ').slice(0, 19) : '',
-        `${e.actor} (${e.actorRole})`,
-        e.action,
-        `${e.targetType}:${e.targetId.slice(0, 14)}`,
-        e.merkleRoot ? e.merkleRoot.slice(0, 14) + '...' : '-',
-        e.entryHash.slice(0, 16) + '...'
-      ].forEach(t => {
-        const td = document.createElement('td');
-        td.textContent = t;
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-  }
-
-  async function refreshAll() {
-    await Promise.all([loadOverview(), loadClusters(), loadMessages(null), loadPlans(), loadAudit()]);
-  }
-
-  // Tabs
-  document.querySelectorAll('.tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      $('tab-' + btn.dataset.tab).classList.add('active');
-    });
-  });
-
-  // Theme toggle
-  $('btn-theme').addEventListener('click', () => {
-    const isDark = document.documentElement.dataset.theme === 'dark';
-    document.documentElement.dataset.theme = isDark ? 'light' : 'dark';
-    $('btn-theme').textContent = isDark ? 'Carbon Dark' : 'Swiss Light';
-  });
-
-  $('btn-refresh').addEventListener('click', () => refreshAll());
-  $('btn-export-csv').addEventListener('click', () => { window.location.href = base + '/api/messages/export.csv'; });
-  $('btn-clear-cluster').addEventListener('click', () => { state.selectedCluster = null; loadClusters(); loadMessages(null); });
-  $('status-filter').addEventListener('change', () => loadMessages(null));
-  $('btn-next-page').addEventListener('click', () => { if (state.nextCursor) loadMessages(state.nextCursor); });
-
-  $('btn-unmask').addEventListener('click', () => { if (state.selectedMessageId) inspectMessage(state.selectedMessageId, true); });
-  $('btn-discard').addEventListener('click', async () => {
-    if (!state.selectedMessageId) return;
-    await api(`/api/messages/${state.selectedMessageId}/discard`, { method: 'POST', body: JSON.stringify({ reason: 'Discarded in workbench' }) });
-    showAlert('Message discarded and audited.', 'ok');
-    refreshAll();
-  });
-  $('btn-resolve-new').addEventListener('click', async () => {
-    if (!state.selectedMessageId) return;
-    await api(`/api/messages/${state.selectedMessageId}/resolve`, { method: 'POST', body: JSON.stringify({ targetStatus: 'NEW', justification: 'Approver verified idempotent retry safe' }) });
-    showAlert('Resolved to NEW.', 'ok');
-    refreshAll();
-  });
-  $('btn-resolve-pub').addEventListener('click', async () => {
-    if (!state.selectedMessageId) return;
-    await api(`/api/messages/${state.selectedMessageId}/resolve`, { method: 'POST', body: JSON.stringify({ targetStatus: 'PUBLISHED', justification: 'Approver verified downstream delivery' }) });
-    showAlert('Resolved to PUBLISHED.', 'ok');
-    refreshAll();
-  });
-
-  $('btn-patch-preview').addEventListener('click', async () => {
-    if (!state.selectedMessageId) return;
-    const res = await api(`/api/messages/${state.selectedMessageId}/patch-preview`, {
-      method: 'POST', body: JSON.stringify({ mergePatchJson: $('patch-editor').value })
-    });
-    $('dryrun-output').textContent = JSON.stringify({ diffs: res.diffs, prettyJson: res.prettyJson }, null, 2);
-  });
-
-  async function runDryRun(tier) {
-    if (!state.selectedMessageId) return;
-    const res = await api(`/api/messages/${state.selectedMessageId}/dry-run`, {
-      method: 'POST',
-      body: JSON.stringify({
-        tier,
-        targetTopic: tier === 'TIER_3_CANARY' ? $('canary-topic-input').value : $('plan-target').value,
-        mergePatchJson: $('patch-editor').value.trim() || null
-      })
-    });
-    $('dryrun-output').textContent = JSON.stringify(res, null, 2);
-  }
-  $('btn-dry-t1').addEventListener('click', () => runDryRun('TIER_1_VALIDATE'));
-  $('btn-dry-t2').addEventListener('click', () => runDryRun('TIER_2_HANDLER_SPI'));
-  $('btn-dry-t3').addEventListener('click', () => runDryRun('TIER_3_CANARY'));
-
-  $('btn-draft-plan').addEventListener('click', async () => {
-    await api('/api/plans', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: $('plan-name').value || 'Replay Plan',
-        targetTopic: $('plan-target').value,
-        dltTopicFilter: $('plan-dlt-topic').value || null,
-        fingerprintFilter: $('plan-fp').value || null,
-        orderingMode: $('plan-ordering').value,
-        rateLimitPerSec: parseInt($('plan-rate').value, 10) || 50,
-        maxRecords: parseInt($('plan-max').value, 10) || 500,
-        payloadPatchJson: $('plan-patch').value.trim() || null
-      })
-    });
-    showAlert('Replay plan drafted with frozen snapshot & planSpecHash.', 'ok');
-    refreshAll();
-  });
-
-  $('btn-verify-audit').addEventListener('click', async () => {
-    const res = await api('/api/audit/verify');
-    const b = $('audit-verify-banner');
-    b.textContent = res.valid
-      ? `INTACT: Verified ${res.totalChecked} hash-chained audit entries. Latest SHA-256: ${res.latestHash || 'GENESIS'}`
-      : `TAMPER DETECTED at sequence ${res.firstInvalidSequenceNo}: ${res.failureReason}`;
-    b.className = 'alert show ' + (res.valid ? 'ok' : 'err');
-  });
-
-  // Live SSE overview pulse
-  function connectSse() {
+    const q = new URLSearchParams();
+    q.set("limit", "50");
+    if (state.filterTopic) q.set("dltTopic", state.filterTopic);
+    if (state.filterStatus) q.set("status", state.filterStatus);
+    if (state.filterFingerprint) q.set("fingerprint", state.filterFingerprint);
+    if (cursor) q.set("cursor", cursor);
     try {
-      const es = new EventSource(base + '/api/stream');
-      es.addEventListener('overview', () => { $('sse-badge').textContent = 'SSE: live'; });
-      es.onerror = () => { $('sse-badge').textContent = 'SSE: reconnecting'; };
-    } catch {}
+      const page = await api("/messages?" + q.toString());
+      state.messages = (page && page.items) ? page.items : [];
+      state.nextCursor = (page && page.nextCursor) ? page.nextCursor : null;
+      state.kbIndex = -1;
+      renderView();
+    } catch (e) {
+      toast(e.message, "danger");
+    }
   }
 
-  refreshAll().catch(() => {});
+  function updateChrome() {
+    const ov = state.overview;
+    if (!ov) return;
+    document.getElementById("nav-count-clusters").textContent = num(ov.clusterCount);
+    document.getElementById("nav-count-messages").textContent = num(ov.totalMessages);
+    document.getElementById("nav-count-approvals").textContent = num(ov.pendingApprovalPlans);
+
+    document.getElementById("dk-actor-name").textContent = ov.actorId || "operator";
+    document.getElementById("dk-actor-role").textContent = ov.actorRole || "VIEWER";
+    const podShort = ov.podId ? (ov.podId.length > 10 ? ov.podId.slice(-7) : ov.podId) : "pod";
+    document.getElementById("dk-pod-chip").textContent = podShort;
+
+    document.getElementById("st-lag").textContent = "lag " + num(ov.totalIngestionLag);
+    document.getElementById("st-pod").textContent = "pod " + (ov.podId || "—");
+    document.getElementById("st-role").textContent = "role: " + (ov.actorRole || "—");
+
+    const livePill = document.getElementById("dk-live-pill");
+    if (ov.ingestionRunning) {
+      livePill.className = "dk-badge dk-badge-ok dk-mono";
+      livePill.innerHTML = '<span class="dk-dot"></span>LIVE';
+    } else {
+      livePill.className = "dk-badge dk-badge-warn dk-mono";
+      livePill.innerHTML = '<span class="dk-dot"></span>PAUSED';
+    }
+
+    const v = state.auditVerify;
+    const navAud = document.getElementById("nav-audit-state");
+    const stAud = document.getElementById("st-audit");
+    if (v) {
+      navAud.textContent = v.valid ? "OK" : "ERR";
+      stAud.textContent = v.valid ? ("audit: intact (" + num(v.totalChecked) + ")") : "audit: TAMPERED";
+    }
+
+    // Dynamic Subscribed Topics in Left Rail
+    const topics = Array.isArray(ov.subscribedTopics) ? ov.subscribedTopics.slice().sort() : [];
+    const lagMap = ov.ingestionLagByTopic || {};
+    // Also union topics discovered from messages in case ingestion is disabled
+    const topicSet = new Set(topics);
+    state.allMessagesSample.forEach(function (m) { if (m.dltTopic) topicSet.add(m.dltTopic); });
+    const allTopics = Array.from(topicSet).sort();
+    const topicsHost = document.getElementById("dk-rail-topics");
+    if (!allTopics.length) {
+      topicsHost.innerHTML = '<div class="dk-nav-item dk-subtle"><span class="dk-nav-label">No *.dlt topics yet</span></div>';
+    } else {
+      topicsHost.innerHTML = allTopics.map(function (t) {
+        const lag = lagMap[t] !== undefined ? lagMap[t] : 0;
+        const active = (state.view === "messages" && state.filterTopic === t) ? " is-active" : "";
+        return '<button type="button" class="dk-nav-item' + active + '" data-topic-nav="' + esc(t) + '" data-rail-label="' + esc(t.toLowerCase()) + '">'
+          + '<span class="dk-nav-left">'
+          + '<svg class="dk-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>'
+          + '<span class="dk-nav-label dk-mono">' + esc(t) + '</span>'
+          + '</span>'
+          + '<span class="dk-nav-count dk-mono dk-tabular">lag ' + num(lag) + '</span>'
+          + '</button>';
+      }).join("");
+    }
+
+    // Highlight active nav item
+    document.querySelectorAll(".dk-nav-item[data-nav]").forEach(function (btn) {
+      btn.classList.toggle("is-active", btn.getAttribute("data-nav") === state.view);
+    });
+  }
+
+  function setCrumb(text) {
+    document.getElementById("dk-crumb-cur").textContent = text;
+  }
+
+  function switchView(view) {
+    state.view = view;
+    updateChrome();
+    if (view === "messages") {
+      loadMessages(null);
+    } else {
+      renderView();
+    }
+  }
+
+  /* View Renderers */
+  function renderView() {
+    const main = document.getElementById("dk-main");
+    switch (state.view) {
+      case "overview":
+        setCrumb("Operations Overview");
+        main.innerHTML = renderOverview();
+        break;
+      case "clusters":
+        setCrumb("Exception Clusters");
+        main.innerHTML = renderClusters();
+        break;
+      case "messages":
+        setCrumb(state.filterTopic ? ("Messages · " + state.filterTopic) : "Messages");
+        main.innerHTML = renderMessages();
+        break;
+      case "approvals":
+        setCrumb("Approval Queue");
+        main.innerHTML = renderApprovals();
+        break;
+      case "draft":
+        setCrumb("Draft Replay Plan");
+        main.innerHTML = renderDraftPlan();
+        break;
+      case "audit":
+        setCrumb("Audit Ledger");
+        main.innerHTML = renderAudit();
+        break;
+    }
+  }
+
+  function renderOverview() {
+    const ov = state.overview || {};
+    const alerts = (ov.indeterminateCount || 0) + (ov.blockedHolCount || 0) + (ov.pausedBlastRadiusPlans || 0);
+    const topicCount = Math.max(
+      (ov.subscribedTopics || []).length,
+      new Set(state.allMessagesSample.map(function (m) { return m.dltTopic; })).size
+    );
+
+    // Callout Banner
+    let callout = "";
+    if (alerts > 0) {
+      callout = '<div class="dk-callout dk-callout-danger">'
+        + '<div class="dk-callout-body">'
+        + '<strong>Safety Guardrail Active</strong>'
+        + '<span>' + num(ov.indeterminateCount) + ' INDETERMINATE · ' + num(ov.blockedHolCount) + ' BLOCKED_HOL · ' + num(ov.pausedBlastRadiusPlans) + ' PAUSED_BLAST_RADIUS — fail-closed until APPROVER review.</span>'
+        + '</div>'
+        + '<button type="button" class="dk-btn dk-btn-sm" data-filter-status-jump="INDETERMINATE">Inspect Alerts →</button>'
+        + '</div>';
+    } else if ((ov.pendingApprovalPlans || 0) > 0) {
+      callout = '<div class="dk-callout dk-callout-warn">'
+        + '<div class="dk-callout-body">'
+        + '<strong>Four-Eyes Queue</strong>'
+        + '<span>' + num(ov.pendingApprovalPlans) + ((ov.pendingApprovalPlans || 0) === 1 ? ' replay plan' : ' replay plans') + ' awaiting independent APPROVER signature with frozen planSpecHash.</span>'
+        + '</div>'
+        + '<button type="button" class="dk-btn dk-btn-sm" data-nav="approvals">Review Approvals →</button>'
+        + '</div>';
+    } else {
+      const checked = state.auditVerify ? state.auditVerify.totalChecked : 0;
+      callout = '<div class="dk-callout dk-callout-ok">'
+        + '<div class="dk-callout-body">'
+        + '<strong>Control Plane Healthy</strong>'
+        + '<span>0 INDETERMINATE · 0 blast-radius circuit trips · SHA-256 audit chain intact (' + num(checked) + ' entries verified).</span>'
+        + '</div>'
+        + '<button type="button" class="dk-btn dk-btn-sm" data-nav="messages">Browse DLT Messages →</button>'
+        + '</div>';
+    }
+
+    // Category aggregation from deduplicated clusters
+    const catMap = {};
+    state.clusters.forEach(function (c) {
+      const k = c.failureCategory || "UNKNOWN";
+      if (!catMap[k]) catMap[k] = { count: 0, clusters: 0 };
+      catMap[k].count += Number(c.totalCount || 0);
+      catMap[k].clusters += 1;
+    });
+    const catItems = Object.keys(catMap).sort(function (a, b) { return catMap[b].count - catMap[a].count; }).map(function (k) {
+      return {
+        label: k,
+        tone: categoryTone(k),
+        value: catMap[k].count,
+        meta: catMap[k].clusters + (catMap[k].clusters === 1 ? " cluster" : " clusters")
+      };
+    });
+
+    // Status distribution from sample
+    const stCounts = {};
+    state.allMessagesSample.forEach(function (m) {
+      stCounts[m.status] = (stCounts[m.status] || 0) + 1;
+    });
+    const donutSegs = [
+      { label: "NEW (Actionable)", value: stCounts.NEW || 0, tone: "info" },
+      { label: "PUBLISHED", value: stCounts.PUBLISHED || 0, tone: "ok" },
+      { label: "QUARANTINED", value: stCounts.QUARANTINED || 0, tone: "warn" },
+      { label: "INDETERMINATE", value: stCounts.INDETERMINATE || 0, tone: "danger" },
+      { label: "BLOCKED_HOL", value: stCounts.BLOCKED_BY_PRIOR_KEY_FAILURE || 0, tone: "warn" },
+      { label: "FAILED_PUBLISH", value: stCounts.FAILED_PUBLISH || 0, tone: "danger" },
+      { label: "DISCARDED", value: stCounts.DISCARDED || 0, tone: "primary" }
+    ];
+
+    const topClustersHtml = state.clusters.length
+      ? '<div class="dk-table-wrap"><table class="dk-table">'
+        + '<thead><tr><th>Fingerprint</th><th>Exception</th><th>Category</th><th class="dk-td-actions">New / Total</th></tr></thead>'
+        + '<tbody>'
+        + state.clusters.slice(0, 5).map(function (c) {
+          return '<tr data-cluster-filter="' + esc(c.fingerprint) + '">'
+            + '<td class="dk-mono"><code class="dk-code">' + esc(shortId(c.fingerprint)) + '</code></td>'
+            + '<td><div><strong>' + esc(shortClass(c.exceptionFqcn)) + '</strong></div><div class="dk-subtle dk-mono">' + esc((c.sampleMessage || "").slice(0, 52)) + '</div></td>'
+            + '<td>' + badgeHtml(c.failureCategory, categoryTone(c.failureCategory), true) + '</td>'
+            + '<td class="dk-td-actions dk-mono dk-tabular"><strong>' + num(c.newCount) + '</strong> <span class="dk-subtle">/ ' + num(c.totalCount) + '</span></td>'
+            + '</tr>';
+        }).join("")
+        + '</tbody></table></div>'
+      : '<div class="dk-chart-empty">No exception clusters recorded yet.</div>';
+
+    const recentAuditHtml = state.audit.length
+      ? state.audit.slice(0, 6).map(function (a) {
+        return '<div class="dk-activity-row">'
+          + '<div class="dk-activity-main">'
+          + '<div>' + badgeHtml(a.action, "neutral", true) + ' <span class="dk-mono">' + esc(a.actor) + '</span> <span class="dk-subtle dk-mono">(' + esc(a.actorRole) + ')</span></div>'
+          + '<div class="dk-subtle dk-mono">' + esc(a.targetType) + ' · ' + esc(shortId(a.targetId)) + (a.merkleRoot ? (' · merkle ' + esc(shortHash(a.merkleRoot))) : '') + '</div>'
+          + '</div>'
+          + '<span class="dk-subtle dk-mono">' + esc(fmtTime(a.createdAt).slice(11)) + '</span>'
+          + '</div>';
+      }).join("")
+      : '<div class="dk-chart-empty">No audit entries recorded yet.</div>';
+
+    return '<div class="dk-page-head">'
+      + '<div>'
+      + '<h1 class="dk-page-title">Operations Overview</h1>'
+      + '<p class="dk-page-sub">Fail-closed Spring Kafka DLT triage, 3-tier dry-run &amp; key-ordered replay · ' + num(topicCount) + (topicCount === 1 ? ' subscribed DLT topic' : ' subscribed DLT topics') + '</p>'
+      + '</div>'
+      + '<div class="dk-page-actions">'
+      + '<a href="' + esc(API) + '/messages/export.csv" class="dk-btn">Export CSV</a>'
+      + '<button type="button" class="dk-btn" data-nav="audit">Verify Audit</button>'
+      + '<button type="button" class="dk-btn dk-btn-primary" data-nav="draft">+ Draft Replay Plan</button>'
+      + '</div>'
+      + '</div>'
+      + '<div class="dk-content">'
+      + callout
+      + '<div class="dk-grid">'
+      + '<div class="dk-span-3"><div class="dk-kpi">'
+      + '<div class="dk-kpi-top"><span>Actionable DLT</span><span class="dk-mono dk-subtle">NEW</span></div>'
+      + '<div class="dk-kpi-mid"><span class="dk-kpi-val dk-mono dk-tabular">' + num(ov.actionableMessages) + '</span>' + sparkSvg([3, 5, 4, 8, 7, Math.max(1, ov.actionableMessages || 0)], "") + '</div>'
+      + '<div class="dk-kpi-delta dk-mono">' + num(ov.totalMessages) + ' total across ' + num(ov.clusterCount) + ' clusters</div>'
+      + '</div></div>'
+      + '<div class="dk-span-3"><div class="dk-kpi">'
+      + '<div class="dk-kpi-top"><span>Ingestion Lag</span><span class="dk-mono dk-subtle">KIP-848</span></div>'
+      + '<div class="dk-kpi-mid"><span class="dk-kpi-val dk-mono dk-tabular">' + num(ov.totalIngestionLag) + '</span>' + sparkSvg([4, 2, 3, 1, 1, ov.totalIngestionLag || 0], (ov.totalIngestionLag || 0) > 0 ? "dk-spark-warn" : "dk-spark-ok") + '</div>'
+      + '<div class="dk-kpi-delta dk-mono">' + (ov.ingestionRunning ? "consumer active" : "consumer paused") + ' · ' + num(topicCount) + (topicCount === 1 ? ' topic' : ' topics') + '</div>'
+      + '</div></div>'
+      + '<div class="dk-span-3"><div class="dk-kpi">'
+      + '<div class="dk-kpi-top"><span>Pending Approvals</span><span class="dk-mono dk-subtle">4-EYES</span></div>'
+      + '<div class="dk-kpi-mid"><span class="dk-kpi-val dk-mono dk-tabular">' + num(ov.pendingApprovalPlans) + '</span>' + sparkSvg([1, 1, 2, 1, 2, Math.max(0, ov.pendingApprovalPlans || 0)], (ov.pendingApprovalPlans || 0) > 0 ? "dk-spark-warn" : "dk-spark-ok") + '</div>'
+      + '<div class="dk-kpi-delta dk-mono">' + num(state.plans.length) + ' total plans · TOCTOU hash-locked</div>'
+      + '</div></div>'
+      + '<div class="dk-span-3"><div class="dk-kpi">'
+      + '<div class="dk-kpi-top"><span>Safety Alerts</span><span class="dk-mono dk-subtle">FENCED</span></div>'
+      + '<div class="dk-kpi-mid"><span class="dk-kpi-val dk-mono dk-tabular">' + num(alerts) + '</span>' + sparkSvg([0, 0, 1, 0, 0, alerts], alerts > 0 ? "dk-spark-danger" : "dk-spark-ok") + '</div>'
+      + '<div class="dk-kpi-delta dk-mono">' + num(ov.indeterminateCount) + ' INDET · ' + num(ov.blockedHolCount) + ' HoL · ' + num(ov.pausedBlastRadiusPlans) + ' paused</div>'
+      + '</div></div>'
+      + '<div class="dk-span-7"><section class="dk-panel">'
+      + '<div class="dk-panel-head"><div><h2 class="dk-panel-title">Failure Category Distribution</h2><p class="dk-panel-sub">Deduplicated exception fingerprints stored once in dlt_deck_fingerprints</p></div><button type="button" class="dk-btn dk-btn-sm" data-nav="clusters">All Clusters →</button></div>'
+      + '<div class="dk-panel-body">' + renderStatBars(catItems) + '</div>'
+      + '</section></div>'
+      + '<div class="dk-span-5"><section class="dk-panel">'
+      + '<div class="dk-panel-head"><div><h2 class="dk-panel-title">Message Lifecycle Split</h2><p class="dk-panel-sub">Honest state machine across sampled records</p></div><span class="dk-badge dk-mono">2-TX Fenced</span></div>'
+      + '<div class="dk-panel-body">' + renderDonut(donutSegs, num(state.allMessagesSample.length), "RECORDS") + '</div>'
+      + '</section></div>'
+      + '<div class="dk-span-7"><section class="dk-panel">'
+      + '<div class="dk-panel-head"><div><h2 class="dk-panel-title">Top Exception Clusters</h2><p class="dk-panel-sub">Click any cluster to filter messages or draft a targeted replay plan</p></div><button type="button" class="dk-btn dk-btn-sm" data-nav="clusters">Open Grid</button></div>'
+      + topClustersHtml
+      + '</section></div>'
+      + '<div class="dk-span-5"><section class="dk-panel">'
+      + '<div class="dk-panel-head"><div><h2 class="dk-panel-title">Recent Audit Ledger</h2><p class="dk-panel-sub">Tamper-evident SHA-256 hash chain &amp; Merkle roots</p></div><button type="button" class="dk-btn dk-btn-sm" data-nav="audit">Full Ledger</button></div>'
+      + '<div>' + recentAuditHtml + '</div>'
+      + '</section></div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function renderClusters() {
+    const rows = state.clusters.length
+      ? state.clusters.map(function (c) {
+        return '<tr>'
+          + '<td class="dk-mono"><code class="dk-code">' + esc(shortHash(c.fingerprint)) + '</code></td>'
+          + '<td><div><strong>' + esc(shortClass(c.exceptionFqcn)) + '</strong></div>'
+          + '<div class="dk-subtle dk-mono">' + esc(c.rootCauseFqcn && c.rootCauseFqcn !== c.exceptionFqcn ? ("caused by " + shortClass(c.rootCauseFqcn)) : (c.exceptionFqcn || "")) + '</div>'
+          + '<div class="dk-muted">' + esc((c.sampleMessage || "").slice(0, 90)) + '</div></td>'
+          + '<td>' + badgeHtml(c.failureCategory, categoryTone(c.failureCategory), true) + '</td>'
+          + '<td class="dk-mono dk-tabular"><strong>' + num(c.newCount) + '</strong> <span class="dk-subtle">/ ' + num(c.totalCount) + '</span></td>'
+          + '<td class="dk-muted">' + esc((c.recommendation || "").slice(0, 72)) + '</td>'
+          + '<td class="dk-td-actions"><div class="dk-row-actions">'
+          + '<button type="button" class="dk-btn dk-btn-sm" data-cluster-filter="' + esc(c.fingerprint) + '">Messages</button>'
+          + '<button type="button" class="dk-btn dk-btn-primary dk-btn-sm" data-cluster-draft="' + esc(c.fingerprint) + '">Draft Plan</button>'
+          + '</div></td>'
+          + '</tr>';
+      }).join("")
+      : '<tr><td colspan="6" class="dk-chart-empty">No deduplicated exception clusters found.</td></tr>';
+
+    return '<div class="dk-page-head">'
+      + '<div><h1 class="dk-page-title">Exception Clusters</h1><p class="dk-page-sub">Canonical stacktraces deduplicated once per fingerprint — zero PostgreSQL TOAST bloat</p></div>'
+      + '<div class="dk-page-actions">'
+      + '<button type="button" class="dk-btn" data-nav="messages">View All Messages</button>'
+      + '<button type="button" class="dk-btn dk-btn-primary" data-nav="draft">+ Draft Replay Plan</button>'
+      + '</div></div>'
+      + '<div class="dk-content">'
+      + '<section class="dk-panel">'
+      + '<div class="dk-table-wrap"><table class="dk-table">'
+      + '<thead><tr><th>Fingerprint</th><th>Exception &amp; Sample</th><th>Category</th><th>New / Total</th><th>Triage Recommendation</th><th class="dk-td-actions">Actions</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody>'
+      + '</table></div>'
+      + '</section></div>';
+  }
+
+  function renderMessages() {
+    const statuses = ["", "NEW", "PUBLISHED", "QUARANTINED", "INDETERMINATE", "BLOCKED_BY_PRIOR_KEY_FAILURE", "FAILED_PUBLISH", "DISCARDED"];
+    const statusLabels = {
+      "": "All",
+      "NEW": "New",
+      "PUBLISHED": "Published",
+      "QUARANTINED": "Quarantined",
+      "INDETERMINATE": "Indeterminate",
+      "BLOCKED_BY_PRIOR_KEY_FAILURE": "Blocked HoL",
+      "FAILED_PUBLISH": "Failed",
+      "DISCARDED": "Discarded"
+    };
+    const counts = { "": state.allMessagesSample.length };
+    state.allMessagesSample.forEach(function (m) {
+      counts[m.status] = (counts[m.status] || 0) + 1;
+    });
+
+    const topics = Array.from(new Set(
+      ((state.overview && state.overview.subscribedTopics) || [])
+        .concat(state.allMessagesSample.map(function (m) { return m.dltTopic; }))
+    )).filter(Boolean).sort();
+
+    const q = state.searchText.trim().toLowerCase();
+    const filtered = state.messages.filter(function (m) {
+      if (!q) return true;
+      return String(m.id || "").toLowerCase().includes(q)
+        || String(m.dltTopic || "").toLowerCase().includes(q)
+        || String(m.originalTopic || "").toLowerCase().includes(q)
+        || String(m.keyFingerprint || "").toLowerCase().includes(q)
+        || String(m.fingerprint || "").toLowerCase().includes(q);
+    });
+
+    const chips = [];
+    if (state.filterTopic) chips.push('<span class="dk-filter-chip dk-mono">topic: ' + esc(state.filterTopic) + ' <button type="button" data-clear-filter="topic" aria-label="Clear topic">×</button></span>');
+    if (state.filterFingerprint) chips.push('<span class="dk-filter-chip dk-mono">fingerprint: ' + esc(shortHash(state.filterFingerprint)) + ' <button type="button" data-clear-filter="fp" aria-label="Clear fingerprint">×</button></span>');
+    if (state.filterStatus) chips.push('<span class="dk-filter-chip dk-mono">status: ' + esc(state.filterStatus) + ' <button type="button" data-clear-filter="status" aria-label="Clear status">×</button></span>');
+
+    const rowsHtml = filtered.length
+      ? filtered.map(function (m, idx) {
+        const fmtLabel = m.payloadFormat === "CONFLUENT_SCHEMA_REGISTRY"
+          ? ("CONFLUENT #" + (m.schemaId != null ? m.schemaId : "?"))
+          : (m.payloadFormat || "RAW");
+        const fmtTone = m.payloadFormat === "CONFLUENT_SCHEMA_REGISTRY" ? "warn" : (m.payloadFormat === "JSON" ? "ok" : "neutral");
+        const sel = (state.inspected && state.inspected.summary && state.inspected.summary.id === m.id) ? " is-selected" : "";
+        const kbf = (idx === state.kbIndex) ? " is-kb-focus" : "";
+        return '<tr class="' + (sel + kbf).trim() + '" data-inspect-id="' + esc(m.id) + '">'
+          + '<td>' + badgeHtml(m.status, statusTone(m.status), true) + '</td>'
+          + '<td><div class="dk-mono"><strong>' + esc(m.dltTopic) + '</strong> <span class="dk-subtle">[' + m.dltPartition + ':' + m.dltOffset + ']</span></div>'
+          + '<div class="dk-subtle dk-mono">orig ' + esc(m.originalTopic || "—") + (m.originalPartition != null ? (' [' + m.originalPartition + ':' + m.originalOffset + ']') : '') + '</div></td>'
+          + '<td>' + badgeHtml(fmtLabel, fmtTone, true) + ' <span class="dk-subtle dk-mono">' + num(m.payloadSizeBytes) + ' B</span></td>'
+          + '<td>' + badgeHtml(m.failureCategory, categoryTone(m.failureCategory), true) + '</td>'
+          + '<td class="dk-mono dk-tabular">' + num(m.replayHops) + '</td>'
+          + '<td class="dk-mono dk-tabular">f:' + num(m.fencingToken) + '</td>'
+          + '<td class="dk-mono dk-subtle">' + esc(fmtTime(m.ingestedAt).slice(5)) + '</td>'
+          + '<td class="dk-td-actions"><button type="button" class="dk-btn dk-btn-sm" data-inspect-id="' + esc(m.id) + '">Inspect</button></td>'
+          + '</tr>';
+      }).join("")
+      : '<tr><td colspan="8" class="dk-chart-empty">No DLT messages match the current filters.</td></tr>';
+
+    const csvParams = new URLSearchParams();
+    if (state.filterTopic) csvParams.set("dltTopic", state.filterTopic);
+    if (state.filterFingerprint) csvParams.set("fingerprint", state.filterFingerprint);
+
+    return '<div class="dk-page-head">'
+      + '<div><h1 class="dk-page-title">Dead-Letter Messages</h1><p class="dk-page-sub">Click any row (or press j/k + Enter) to open the right-hand slide-over inspector drawer</p></div>'
+      + '<div class="dk-page-actions">'
+      + '<div class="dk-seg" role="group" aria-label="Table density">'
+      + '<button type="button" class="dk-seg-btn' + (state.density !== "compact" ? " is-active" : "") + '" data-density-set="comfortable">Comfortable</button>'
+      + '<button type="button" class="dk-seg-btn' + (state.density === "compact" ? " is-active" : "") + '" data-density-set="compact">Compact</button>'
+      + '</div>'
+      + '<a href="' + esc(API + "/messages/export.csv" + (csvParams.toString() ? ("?" + csvParams.toString()) : "")) + '" class="dk-btn">Export CSV</a>'
+      + '<button type="button" class="dk-btn dk-btn-primary" id="btn-draft-from-filter">+ Draft Plan</button>'
+      + '</div></div>'
+      + '<div class="dk-content">'
+      + '<section class="dk-panel">'
+      + '<div class="dk-tabs">'
+      + statuses.map(function (st) {
+        const active = state.filterStatus === st ? " is-active" : "";
+        const c = counts[st] || 0;
+        return '<button type="button" class="dk-tab' + active + '" data-status-tab="' + esc(st) + '">'
+          + esc(statusLabels[st] || st)
+          + '<span class="dk-tab-count dk-mono dk-tabular">' + num(c) + '</span>'
+          + '</button>';
+      }).join("")
+      + '</div>'
+      + '<div class="dk-toolbar">'
+      + '<div class="dk-toolbar-left">'
+      + '<div class="dk-search-box">'
+      + '<svg class="dk-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+      + '<input type="search" id="msg-search-input" class="dk-input" placeholder="Search topic, key, fingerprint, ID…" value="' + esc(state.searchText) + '">'
+      + '</div>'
+      + '<select id="msg-topic-select" class="dk-select dk-mono" aria-label="Filter by DLT topic">'
+      + '<option value="">All DLT Topics</option>'
+      + topics.map(function (t) {
+        return '<option value="' + esc(t) + '"' + (state.filterTopic === t ? " selected" : "") + '>' + esc(t) + '</option>';
+      }).join("")
+      + '</select>'
+      + '</div>'
+      + '<div class="dk-toolbar-right">'
+      + '<span class="dk-subtle dk-mono dk-tabular">' + num(filtered.length) + ' shown · HMAC signed keyset cursor</span>'
+      + '</div>'
+      + '</div>'
+      + (chips.length ? ('<div class="dk-filter-chips">' + chips.join("") + '</div>') : '')
+      + '<div class="dk-table-wrap"><table class="dk-table">'
+      + '<thead><tr><th>Status</th><th>DLT Coordinates &amp; Source</th><th>Payload Format</th><th>Category</th><th>Hops</th><th>Fence</th><th>Ingested</th><th class="dk-td-actions">Inspect</th></tr></thead>'
+      + '<tbody>' + rowsHtml + '</tbody>'
+      + '</table></div>'
+      + '<div class="dk-pagination">'
+      + '<span class="dk-mono">Keyset page · ' + num(filtered.length) + ' rows</span>'
+      + '<div class="dk-pag-btns">'
+      + (state.nextCursor ? '<button type="button" class="dk-btn dk-btn-sm" id="btn-next-cursor">Next Page →</button>' : '<span class="dk-subtle dk-mono">End of stream</span>')
+      + '</div>'
+      + '</div>'
+      + '</section></div>';
+  }
+
+  function renderPatchChips(patchJson) {
+    if (!patchJson || !patchJson.trim()) return "";
+    try {
+      const obj = JSON.parse(patchJson);
+      if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+        return '<div class="dk-diff-list"><div class="dk-diff-row"><span class="dk-diff-key">patch:</span><span class="dk-diff-new">' + esc(patchJson) + '</span></div></div>';
+      }
+      const rows = Object.keys(obj).map(function (k) {
+        const val = obj[k];
+        if (val === null) {
+          return '<div class="dk-diff-row"><span class="dk-diff-key">' + esc(k) + ':</span><span class="dk-diff-old">removed (null)</span></div>';
+        }
+        return '<div class="dk-diff-row"><span class="dk-diff-key">' + esc(k) + ':</span><span class="dk-subtle">→</span><span class="dk-diff-new">' + esc(JSON.stringify(val)) + '</span></div>';
+      });
+      return '<div class="dk-diff-list">' + rows.join("") + '</div>';
+    } catch (_) {
+      return '<div class="dk-diff-list"><div class="dk-diff-row"><span class="dk-diff-key">patch:</span><span class="dk-diff-new">' + esc(patchJson) + '</span></div></div>';
+    }
+  }
+
+  function renderApprovals() {
+    const actorId = state.overview ? state.overview.actorId : "";
+    const actorRole = state.overview ? state.overview.actorRole : "";
+    const canApprove = actorRole === "APPROVER" || actorRole === "SYSTEM";
+
+    const filtered = state.plans.filter(function (p) {
+      if (state.planFilter === "pending") return p.status === "PENDING_APPROVAL";
+      if (state.planFilter === "completed") return p.status === "COMPLETED";
+      if (state.planFilter === "paused") return p.status === "PAUSED_BLAST_RADIUS" || p.status === "REJECTED";
+      return true;
+    });
+
+    const cards = filtered.length
+      ? filtered.map(function (p) {
+        const isPending = p.status === "PENDING_APPROVAL";
+        const isSelf = actorId && p.createdBy && actorId === p.createdBy;
+        const showStats = !isPending || p.totalClaimed > 0;
+        let actionBar = "";
+        if (isPending) {
+          if (isSelf) {
+            actionBar = '<div class="dk-toolbar-flat">'
+              + '<span class="dk-badge dk-badge-warn">Awaiting peer reviewer (four-eyes blocks self-approval by ' + esc(p.createdBy) + ')</span>'
+              + '<span class="dk-subtle dk-mono">Sign in as APPROVER to execute</span>'
+              + '</div>';
+          } else if (canApprove) {
+            actionBar = '<div class="dk-toolbar-flat">'
+              + '<div class="dk-toolbar-left">'
+              + '<button type="button" class="dk-btn dk-btn-primary dk-btn-sm" data-plan-approve="' + esc(p.id) + '" data-plan-hash="' + esc(p.planSpecHash) + '">✓ Approve &amp; Execute</button>'
+              + '<span class="dk-subtle dk-mono">verifies frozen planSpecHash</span>'
+              + '</div>'
+              + '<div class="dk-toolbar-right">'
+              + '<input type="text" class="dk-input" data-reject-input="' + esc(p.id) + '" placeholder="Rejection reason (optional)">'
+              + '<button type="button" class="dk-btn dk-btn-danger dk-btn-sm" data-plan-reject="' + esc(p.id) + '">× Reject</button>'
+              + '</div>'
+              + '</div>';
+          } else {
+            actionBar = '<div class="dk-toolbar-flat">'
+              + '<span class="dk-badge dk-badge-info">Pending APPROVER peer review (current role: ' + esc(actorRole || "VIEWER") + ')</span>'
+              + '</div>';
+          }
+        } else {
+          actionBar = '<div class="dk-muted dk-mono">'
+            + (p.approvedBy ? ('Reviewed by ' + esc(p.approvedBy)) : 'Finalized')
+            + (p.approvedAt ? (' at ' + esc(fmtTime(p.approvedAt))) : '')
+            + (p.rejectionReason ? (' · Reason: "' + esc(p.rejectionReason) + '"') : '')
+            + '</div>';
+        }
+
+        const statsHtml = showStats
+          ? '<div class="dk-plan-stats dk-mono dk-tabular">'
+            + '<div class="dk-mini-stat"><span class="dk-mini-stat-label">Claimed</span><span class="dk-mini-stat-val">' + num(p.totalClaimed) + '</span></div>'
+            + '<div class="dk-mini-stat"><span class="dk-mini-stat-label">Published</span><span class="dk-mini-stat-val dk-text-ok">' + num(p.totalPublished) + '</span></div>'
+            + '<div class="dk-mini-stat"><span class="dk-mini-stat-label">Failed</span><span class="dk-mini-stat-val' + (p.totalFailed > 0 ? ' dk-text-danger' : '') + '">' + num(p.totalFailed) + '</span></div>'
+            + '<div class="dk-mini-stat"><span class="dk-mini-stat-label">Indeterminate</span><span class="dk-mini-stat-val' + (p.totalIndeterminate > 0 ? ' dk-text-danger' : '') + '">' + num(p.totalIndeterminate) + '</span></div>'
+            + '<div class="dk-mini-stat"><span class="dk-mini-stat-label">Blocked HoL</span><span class="dk-mini-stat-val' + (p.totalBlockedHol > 0 ? ' dk-text-warn' : '') + '">' + num(p.totalBlockedHol) + '</span></div>'
+            + '<div class="dk-mini-stat"><span class="dk-mini-stat-label">Re-DLT</span><span class="dk-mini-stat-val' + (p.totalReDlt > 0 ? ' dk-text-danger' : '') + '">' + num(p.totalReDlt) + '</span></div>'
+            + '</div>'
+          : '';
+
+        return '<section class="dk-panel">'
+          + '<div class="dk-panel-head">'
+          + '<div class="dk-panel-head-left">'
+          + badgeHtml(p.status, statusTone(p.status), true)
+          + badgeHtml(p.orderingMode, "info", true)
+          + '<strong>' + esc(p.name) + '</strong>'
+          + '<span class="dk-muted dk-mono">→ ' + esc(p.targetTopic) + '</span>'
+          + '<span class="dk-mono dk-subtle">(#' + esc(shortId(p.id)) + ')</span>'
+          + '</div>'
+          + '<div class="dk-page-actions">'
+          + '<span class="dk-badge dk-mono">' + esc(p.createdBy) + '</span>'
+          + '<span class="dk-mono dk-subtle">' + esc(fmtTime(p.createdAt)) + '</span>'
+          + '</div>'
+          + '</div>'
+          + '<div class="dk-panel-body">'
+          + '<div class="dk-alert dk-alert-info dk-mono">'
+          + '<strong>Spec Lock:</strong> hash=' + esc(shortHash(p.planSpecHash)) + ' · snapshot=' + num(p.snapshotCount) + ' eligible · rate=' + num(p.rateLimitPerSec) + '/s · max=' + num(p.maxRecords)
+          + (p.dltTopicFilter ? (' · dltTopic=' + esc(p.dltTopicFilter)) : '')
+          + (p.fingerprintFilter ? (' · fp=' + esc(shortHash(p.fingerprintFilter))) : '')
+          + '</div>'
+          + (p.payloadPatchJson ? renderPatchChips(p.payloadPatchJson) : '<div class="dk-subtle">No RFC 7396 payload mutation — replaying original bytes verbatim.</div>')
+          + statsHtml
+          + actionBar
+          + '</div>'
+          + '</section>';
+      }).join("")
+      : '<section class="dk-panel"><div class="dk-chart-empty">No replay plans match filter "' + esc(state.planFilter) + '".</div></section>';
+
+    return '<div class="dk-page-head">'
+      + '<div><h1 class="dk-page-title">Approval Queue</h1><p class="dk-page-sub">Four-eyes Maker-Checker governance across human operators and MCP agents · frozen planSpecHash TOCTOU defense</p></div>'
+      + '<div class="dk-page-actions">'
+      + '<div class="dk-seg" role="group" aria-label="Filter plans">'
+      + ['all', 'pending', 'completed', 'paused'].map(function (f) {
+        return '<button type="button" class="dk-seg-btn' + (state.planFilter === f ? ' is-active' : '') + '" data-plan-filter="' + f + '">' + f.charAt(0).toUpperCase() + f.slice(1) + '</button>';
+      }).join("")
+      + '</div>'
+      + '<button type="button" class="dk-btn dk-btn-primary" data-nav="draft">+ Draft Replay Plan</button>'
+      + '</div></div>'
+      + '<div class="dk-content">' + cards + '</div>';
+  }
+
+  function renderDraftPlan() {
+    const f = state.draftForm;
+    const topics = Array.from(new Set(
+      ((state.overview && state.overview.subscribedTopics) || [])
+        .concat(state.allMessagesSample.map(function (m) { return m.dltTopic; }))
+    )).filter(Boolean).sort();
+
+    return '<div class="dk-page-head">'
+      + '<div><h1 class="dk-page-title">Draft Replay Plan</h1><p class="dk-page-sub">Freezes eligible snapshot count and SHA-256 planSpecHash before independent APPROVER sign-off</p></div>'
+      + '<div class="dk-page-actions"><button type="button" class="dk-btn" data-nav="approvals">Back to Approval Queue</button></div>'
+      + '</div>'
+      + '<div class="dk-content">'
+      + '<section class="dk-panel">'
+      + '<div class="dk-panel-head"><div><h2 class="dk-panel-title">Plan Specification</h2><p class="dk-panel-sub">Target topic is verified via AdminClient.describeTopics() — non-existent and *.dlt targets are fail-closed blocked</p></div><span class="dk-badge dk-badge-info dk-mono">RFC 7396 + Stripe Leases</span></div>'
+      + '<form id="dk-draft-form" class="dk-panel-body">'
+      + '<div class="dk-form-grid">'
+      + '<div class="dk-field"><label for="dp-name">Plan Name</label><input id="dp-name" class="dk-input" required placeholder="Fix invalid TRL currency batch" value="' + esc(f.name) + '"></div>'
+      + '<div class="dk-field"><label for="dp-target">Validated Target Topic</label><input id="dp-target" class="dk-input dk-mono" required placeholder="orders.events" value="' + esc(f.targetTopic) + '"><span class="dk-help-text">Must exist in Kafka and must not match DLT suffix patterns.</span></div>'
+      + '<div class="dk-field"><label for="dp-dlt">DLT Topic Filter (Optional)</label><select id="dp-dlt" class="dk-select dk-mono"><option value="">Any DLT topic</option>'
+      + topics.map(function (t) { return '<option value="' + esc(t) + '"' + (f.dltTopicFilter === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join("")
+      + '</select></div>'
+      + '<div class="dk-field"><label for="dp-fp">Fingerprint Filter (Optional)</label><input id="dp-fp" class="dk-input dk-mono" placeholder="Leave blank for all matching records" value="' + esc(f.fingerprintFilter) + '"></div>'
+      + '<div class="dk-field"><label for="dp-order">Ordering Mode</label><select id="dp-order" class="dk-select dk-mono">'
+      + '<option value="PRESERVE_KEY_ORDER"' + (f.orderingMode === "PRESERVE_KEY_ORDER" ? ' selected' : '') + '>PRESERVE_KEY_ORDER (Deterministic Stripes + HoL Barrier)</option>'
+      + '<option value="BEST_EFFORT"' + (f.orderingMode === "BEST_EFFORT" ? ' selected' : '') + '>BEST_EFFORT (Parallel Virtual Threads)</option>'
+      + '</select></div>'
+      + '<div class="dk-field"><label for="dp-rate">Rate Limit (msg/sec) &amp; Max Records</label>'
+      + '<div class="dk-form-grid">'
+      + '<input id="dp-rate" type="number" min="1" max="50000" class="dk-input dk-mono" value="' + esc(f.rateLimitPerSec) + '" aria-label="Rate limit">'
+      + '<input id="dp-max" type="number" min="1" max="100000" class="dk-input dk-mono" value="' + esc(f.maxRecords) + '" aria-label="Max records">'
+      + '</div></div>'
+      + '<div class="dk-field dk-field-full"><label for="dp-patch">RFC 7396 JSON Merge Patch (Optional — JSON payloads only)</label>'
+      + '<textarea id="dp-patch" class="dk-textarea dk-mono" placeholder=\'{"currency": "TRY"}\'>' + esc(f.payloadPatchJson) + '</textarea>'
+      + '<span class="dk-help-text">Binary Confluent 0x00 Avro/Protobuf records are automatically rejected as NOT_PATCHABLE to prevent byte corruption.</span></div>'
+      + '</div>'
+      + '<div class="dk-form-actions">'
+      + '<span class="dk-subtle dk-mono">Four-eyes policy: creator cannot self-approve this plan.</span>'
+      + '<div class="dk-page-actions">'
+      + '<button type="button" class="dk-btn" data-nav="approvals">Cancel</button>'
+      + '<button type="submit" class="dk-btn dk-btn-primary">Freeze Plan &amp; Request Approval</button>'
+      + '</div></div>'
+      + '</form></section></div>';
+  }
+
+  function renderAudit() {
+    const v = state.auditVerify;
+    const callout = v
+      ? (v.valid
+        ? '<div class="dk-callout dk-callout-ok"><div class="dk-callout-body"><strong>SHA-256 Audit Chain Verified</strong><span class="dk-mono">' + num(v.totalChecked) + ' entries verified · latest=' + esc(shortHash(v.latestHash)) + '</span></div><button type="button" class="dk-btn dk-btn-sm" id="btn-reverify-audit">Re-verify Chain</button></div>'
+        : '<div class="dk-callout dk-callout-danger"><div class="dk-callout-body"><strong>INTEGRITY VIOLATION AT SEQ #' + esc(v.firstInvalidSequenceNo) + '</strong><span class="dk-mono">' + esc(v.failureReason) + '</span></div><button type="button" class="dk-btn dk-btn-sm" id="btn-reverify-audit">Re-verify</button></div>')
+      : '';
+
+    const rows = state.audit.length
+      ? state.audit.map(function (a) {
+        return '<tr>'
+          + '<td class="dk-mono dk-tabular">#' + num(a.sequenceNo) + '</td>'
+          + '<td class="dk-mono dk-subtle">' + esc(fmtTime(a.createdAt)) + '</td>'
+          + '<td><span class="dk-mono"><strong>' + esc(a.actor) + '</strong></span> ' + badgeHtml(a.actorRole, "neutral", true) + '</td>'
+          + '<td>' + badgeHtml(a.action, "info", true) + '</td>'
+          + '<td class="dk-mono">' + esc(a.targetType) + ':' + esc(shortId(a.targetId)) + '</td>'
+          + '<td class="dk-mono">' + (a.merkleRoot ? '<code class="dk-code">' + esc(shortHash(a.merkleRoot)) + '</code>' : '<span class="dk-subtle">—</span>') + '</td>'
+          + '<td class="dk-mono dk-subtle">' + esc(shortHash(a.entryHash)) + '</td>'
+          + '</tr>';
+      }).join("")
+      : '<tr><td colspan="7" class="dk-chart-empty">No audit ledger entries yet.</td></tr>';
+
+    return '<div class="dk-page-head">'
+      + '<div><h1 class="dk-page-title">Cryptographic Audit Ledger</h1><p class="dk-page-sub">Tamper-evident SHA-256 chained control-plane events &amp; batch Merkle checkpoints</p></div>'
+      + '<div class="dk-page-actions"><button type="button" class="dk-btn dk-btn-primary" id="btn-reverify-audit-top">Verify SHA-256 Chain</button></div>'
+      + '</div>'
+      + '<div class="dk-content">'
+      + callout
+      + '<section class="dk-panel"><div class="dk-table-wrap"><table class="dk-table">'
+      + '<thead><tr><th>Seq</th><th>Timestamp (UTC)</th><th>Actor &amp; Role</th><th>Action</th><th>Target</th><th>Batch Merkle Root</th><th>Entry SHA-256</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody>'
+      + '</table></div></section></div>';
+  }
+
+  /* Right-Hand Slide-Over Message Inspector Drawer */
+  async function openInspector(messageId, unmask) {
+    try {
+      const data = await api("/messages/" + encodeURIComponent(messageId) + (unmask ? "?unmask=true" : ""));
+      state.inspected = data;
+      state.drawerOpen = true;
+      if (!unmask) {
+        state.drawerTab = "overview";
+        state.patchResult = null;
+        state.dryRunResult = null;
+        state.dryRunTarget = (data.summary && data.summary.originalTopic) ? data.summary.originalTopic : "";
+      }
+      renderDrawer();
+      document.getElementById("dk-drawer-backdrop").hidden = false;
+      if (state.view === "messages") renderView();
+    } catch (e) {
+      toast(e.message, "danger");
+    }
+  }
+
+  function closeInspector() {
+    state.drawerOpen = false;
+    document.getElementById("dk-drawer-backdrop").hidden = true;
+  }
+
+  function renderDrawer() {
+    const m = state.inspected;
+    if (!m) return;
+    const s = m.summary;
+    document.getElementById("dk-drawer-title").textContent = "Message " + shortId(s.id);
+    const stEl = document.getElementById("dk-drawer-status");
+    stEl.className = "dk-badge dk-badge-" + statusTone(s.status) + " dk-mono";
+    stEl.innerHTML = '<span class="dk-dot"></span>' + esc(s.status);
+
+    document.querySelectorAll("#dk-drawer-tabs .dk-tab").forEach(function (t) {
+      t.classList.toggle("is-active", t.getAttribute("data-dtab") === state.drawerTab);
+    });
+
+    const body = document.getElementById("dk-drawer-body");
+    const foot = document.getElementById("dk-drawer-foot");
+
+    if (state.drawerTab === "overview") {
+      const fmtBadge = m.payloadFormat === "CONFLUENT_SCHEMA_REGISTRY"
+        ? badgeHtml("CONFLUENT #" + (m.schemaId != null ? m.schemaId : "?") + " · NOT_PATCHABLE", "warn", true)
+        : badgeHtml(m.payloadFormat + (m.patchable ? " · PATCHABLE" : " · READ-ONLY"), m.patchable ? "ok" : "neutral", true);
+
+      const piiBar = m.piiRedacted
+        ? '<span class="dk-masked">PII REDACTED</span>'
+        : badgeHtml("PII UNMASKED · AUDITED", "warn", true);
+
+      const kv = [
+        ["DLT Coordinates", s.dltTopic + " [" + s.dltPartition + ":" + s.dltOffset + "]"],
+        ["Original Coordinates", (s.originalTopic || "—") + (s.originalPartition != null ? (" [" + s.originalPartition + ":" + s.originalOffset + "]") : "")],
+        ["Message Key", m.messageKey || (s.keyFingerprint ? ("fp:" + shortHash(s.keyFingerprint)) : "null")],
+        ["Exception", shortClass(m.exceptionFqcn)],
+        ["Failure Category", s.failureCategory],
+        ["Hops / Fencing", "hop " + num(s.replayHops) + " · fence " + num(s.fencingToken)],
+        ["Payload Size", num(s.payloadSizeBytes) + " bytes"],
+        ["Ingested (UTC)", fmtTime(s.ingestedAt)]
+      ];
+      if (m.cloudEventType) {
+        kv.push(["CloudEvent", m.cloudEventType + " (" + (m.cloudEventSource || "—") + ")"]);
+      }
+
+      body.innerHTML = '<div class="dk-drawer-sec">'
+        + '<div class="dk-toolbar-left">' + piiBar + fmtBadge
+        + (m.piiRedacted ? '<button type="button" class="dk-btn dk-btn-sm" id="btn-unmask-pii">Unmask PII (Approver)</button>' : '')
+        + '</div>'
+        + (m.recommendation ? '<div class="dk-alert dk-alert-info"><strong>Triage Guidance:</strong> ' + esc(m.recommendation) + '</div>' : '')
+        + '</div>'
+        + '<div class="dk-kv-grid">'
+        + kv.map(function (pair) {
+          return '<div class="dk-kv-item"><div class="dk-kv-key">' + esc(pair[0]) + '</div><div class="dk-kv-val dk-mono">' + esc(pair[1]) + '</div></div>';
+        }).join("")
+        + '</div>'
+        + '<div class="dk-drawer-sec">'
+        + '<div class="dk-kpi-top"><span>Payload Preview</span><span class="dk-mono dk-subtle">' + esc(m.payloadFormat) + '</span></div>'
+        + '<pre class="dk-pre dk-mono">' + esc(m.payloadPreview || "<empty>") + '</pre>'
+        + '</div>';
+    } else if (state.drawerTab === "patch") {
+      const guardHtml = !m.patchable
+        ? '<div class="dk-alert dk-alert-warn"><strong>NOT_PATCHABLE Binary Guard:</strong> Payload format <code class="dk-code">' + esc(m.payloadFormat) + '</code>' + (m.schemaId != null ? (' (Schema Registry #' + esc(m.schemaId) + ')') : '') + ' cannot be RFC 7396 JSON-patched without corrupting binary wire framing.</div>'
+        : '';
+
+      const diffHtml = state.patchResult
+        ? '<div class="dk-panel"><div class="dk-panel-head"><strong class="dk-panel-title">RFC 7396 Field Diff</strong><span class="dk-badge dk-badge-ok dk-mono">' + num((state.patchResult.diffs || []).length) + ' changes</span></div>'
+          + '<div class="dk-panel-body">'
+          + ((state.patchResult.diffs || []).length
+            ? '<div class="dk-diff-list">' + state.patchResult.diffs.map(function (d) {
+              return '<div class="dk-diff-row">'
+                + '<span class="dk-diff-key">' + esc(d.jsonPath) + ':</span>'
+                + (d.beforeValue != null ? '<span class="dk-diff-old">' + esc(d.beforeValue) + '</span>' : '')
+                + '<span class="dk-subtle">→</span>'
+                + (d.afterValue != null ? '<span class="dk-diff-new">' + esc(d.afterValue) + '</span>' : '<span class="dk-diff-old">removed</span>')
+                + '</div>';
+            }).join("") + '</div>'
+            : '<div class="dk-subtle">Patch produces identical JSON document.</div>')
+          + '<pre class="dk-pre dk-mono">' + esc(state.patchResult.prettyJson || "") + '</pre>'
+          + '</div></div>'
+        : '';
+
+      const dryHtml = state.dryRunResult
+        ? '<div class="dk-alert ' + (state.dryRunResult.passed ? 'dk-alert-ok' : 'dk-alert-danger') + '">'
+          + '<div><strong>' + esc(state.dryRunResult.tier) + ' · ' + (state.dryRunResult.passed ? 'PASSED' : 'FAILED') + '</strong> <span class="dk-mono">(' + num(state.dryRunResult.durationMs) + ' ms)</span></div>'
+          + '<div>' + esc(state.dryRunResult.summary) + '</div>'
+          + ((state.dryRunResult.diagnostics || []).length
+            ? '<div class="dk-mono">' + state.dryRunResult.diagnostics.map(function (line) { return '· ' + esc(line); }).join("<br>") + '</div>'
+            : '')
+          + '</div>'
+        : '';
+
+      body.innerHTML = '<div class="dk-drawer-sec">'
+        + guardHtml
+        + '<div class="dk-field">'
+        + '<label for="dr-patch-json">RFC 7396 JSON Merge Patch</label>'
+        + '<textarea id="dr-patch-json" class="dk-textarea dk-mono"' + (!m.patchable ? ' disabled' : '') + ' placeholder=\'{"currency": "TRY"}\'>' + esc(state.patchDraft) + '</textarea>'
+        + '</div>'
+        + '<div class="dk-toolbar-left">'
+        + '<button type="button" class="dk-btn" id="btn-preview-patch"' + (!m.patchable ? ' disabled' : '') + '>Preview RFC 7396 Diff</button>'
+        + '</div>'
+        + diffHtml
+        + '<div class="dk-panel"><div class="dk-panel-head"><strong class="dk-panel-title">Honest 3-Tier Dry-Run</strong><span class="dk-badge dk-mono">Zero Fake Rollback</span></div>'
+        + '<div class="dk-panel-body">'
+        + '<div class="dk-field"><label for="dr-tier">Verification Tier</label>'
+        + '<select id="dr-tier" class="dk-select dk-mono">'
+        + '<option value="TIER_1_VALIDATE"' + (state.dryRunTier === "TIER_1_VALIDATE" ? ' selected' : '') + '>TIER_1_VALIDATE (Deserialization, Patch &amp; Size)</option>'
+        + '<option value="TIER_2_SPI_REPLAY"' + (state.dryRunTier === "TIER_2_SPI_REPLAY" ? ' selected' : '') + '>TIER_2_SPI_REPLAY (Host DltDryRunVerifier SPI)</option>'
+        + '<option value="TIER_3_CANARY"' + (state.dryRunTier === "TIER_3_CANARY" ? ' selected' : '') + '>TIER_3_CANARY (Publish to Isolated Canary Topic)</option>'
+        + '</select></div>'
+        + '<div class="dk-field"><label for="dr-target">Target / Canary Topic (Optional)</label>'
+        + '<input id="dr-target" class="dk-input dk-mono" value="' + esc(state.dryRunTarget) + '" placeholder="orders.events.canary"></div>'
+        + '<div class="dk-toolbar-left"><button type="button" class="dk-btn dk-btn-primary" id="btn-run-dryrun">Execute Dry-Run</button></div>'
+        + dryHtml
+        + '</div></div>'
+        + '</div>';
+    } else {
+      const hdrs = m.headers || {};
+      const hKeys = Object.keys(hdrs);
+      const hdrTable = hKeys.length
+        ? '<table class="dk-table"><thead><tr><th>Header</th><th>Value</th></tr></thead><tbody>'
+          + hKeys.map(function (k) {
+            return '<tr><td class="dk-mono dk-muted">' + esc(k) + '</td><td class="dk-mono">' + esc(hdrs[k]) + '</td></tr>';
+          }).join("") + '</tbody></table>'
+        : '<div class="dk-chart-empty">No Kafka headers present.</div>';
+
+      body.innerHTML = '<div class="dk-drawer-sec">'
+        + '<div class="dk-kpi-top"><span>Kafka Headers (' + num(hKeys.length) + ')</span><span class="dk-mono dk-subtle">' + (m.piiRedacted ? 'redacted' : 'unmasked') + '</span></div>'
+        + '<div class="dk-panel"><div class="dk-table-wrap">' + hdrTable + '</div></div>'
+        + '<div class="dk-kpi-top"><span>Canonical Stacktrace (Deduplicated)</span><span class="dk-mono dk-subtle">fp ' + esc(shortHash(s.fingerprint)) + '</span></div>'
+        + '<pre class="dk-pre dk-mono">' + esc(m.canonicalStacktrace || "No stacktrace recorded.") + '</pre>'
+        + '</div>';
+    }
+
+    // Drawer Footer Actions
+    const canResolve = ["INDETERMINATE", "BLOCKED_BY_PRIOR_KEY_FAILURE", "QUARANTINED"].includes(s.status);
+    foot.innerHTML = '<div class="dk-toolbar-left">'
+      + '<button type="button" class="dk-btn dk-btn-sm" id="btn-drawer-draft">Draft Plan for Cluster</button>'
+      + (canResolve
+        ? '<button type="button" class="dk-btn dk-btn-primary dk-btn-sm" data-resolve-status="NEW">Resolve → NEW</button>'
+          + '<button type="button" class="dk-btn dk-btn-sm" data-resolve-status="PUBLISHED">Resolve → PUBLISHED</button>'
+        : '')
+      + '</div>'
+      + '<div class="dk-toolbar-right">'
+      + (s.status === "NEW" || s.status === "FAILED_PUBLISH" || s.status === "QUARANTINED"
+        ? '<button type="button" class="dk-btn dk-btn-danger dk-btn-sm" id="btn-drawer-discard">Discard</button>'
+        : '')
+      + '</div>';
+  }
+
+  /* Command Palette */
+  function buildCmdkItems(query) {
+    const q = (query || "").trim().toLowerCase();
+    const items = [
+      { label: "Operations Overview", hint: "view", run: function () { switchView("overview"); } },
+      { label: "Exception Clusters", hint: "view", run: function () { switchView("clusters"); } },
+      { label: "Dead-Letter Messages", hint: "view", run: function () { state.filterTopic = ""; state.filterFingerprint = ""; state.filterStatus = ""; switchView("messages"); } },
+      { label: "Approval Queue (Four-Eyes)", hint: "governance", run: function () { switchView("approvals"); } },
+      { label: "Draft Replay Plan", hint: "action", run: function () { switchView("draft"); } },
+      { label: "Cryptographic Audit Ledger", hint: "governance", run: function () { switchView("audit"); } },
+      { label: "Filter INDETERMINATE Safety Alerts", hint: "triage", run: function () { state.filterStatus = "INDETERMINATE"; switchView("messages"); } },
+      { label: "Toggle Carbon Dark / Swiss Light Theme", hint: "t", run: toggleTheme },
+      { label: "Verify SHA-256 Audit Chain Now", hint: "audit", run: verifyAuditNow },
+      { label: "Export Filtered Messages as CSV", hint: "export", run: function () { window.location.href = API + "/messages/export.csv"; } }
+    ];
+    const topics = (state.overview && state.overview.subscribedTopics) || [];
+    topics.forEach(function (t) {
+      items.push({
+        label: "Topic: " + t,
+        hint: "dlt topic",
+        run: function () { state.filterTopic = t; state.filterFingerprint = ""; switchView("messages"); }
+      });
+    });
+    return q ? items.filter(function (it) { return it.label.toLowerCase().includes(q) || it.hint.toLowerCase().includes(q); }) : items;
+  }
+
+  function renderCmdk() {
+    const q = document.getElementById("dk-cmdk-input").value;
+    state.cmdkItems = buildCmdkItems(q);
+    if (state.cmdkIdx >= state.cmdkItems.length) state.cmdkIdx = 0;
+    const list = document.getElementById("dk-cmdk-list");
+    list.innerHTML = state.cmdkItems.length
+      ? state.cmdkItems.map(function (it, idx) {
+        return '<button type="button" class="dk-cmdk-item' + (idx === state.cmdkIdx ? ' is-active' : '') + '" data-cmdk-idx="' + idx + '">'
+          + '<span>' + esc(it.label) + '</span>'
+          + '<span class="dk-kbd dk-mono">' + esc(it.hint) + '</span>'
+          + '</button>';
+      }).join("")
+      : '<div class="dk-chart-empty">No matching commands.</div>';
+  }
+
+  function openCmdk() {
+    state.cmdkIdx = 0;
+    const input = document.getElementById("dk-cmdk-input");
+    input.value = "";
+    renderCmdk();
+    document.getElementById("dk-cmdk-backdrop").hidden = false;
+    input.focus();
+  }
+
+  function closeCmdk() {
+    document.getElementById("dk-cmdk-backdrop").hidden = true;
+  }
+
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    const next = cur === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("dlt_deck_theme", next); } catch (_) {}
+    toast("Switched to " + (next === "dark" ? "Carbon Dark" : "Swiss Light"), "ok");
+  }
+
+  async function verifyAuditNow() {
+    try {
+      const res = await api("/audit/verify");
+      state.auditVerify = res;
+      updateChrome();
+      if (state.view === "audit") renderView();
+      toast(res.valid ? ("SHA-256 chain intact (" + res.totalChecked + " entries)") : ("Tamper detected at seq " + res.firstInvalidSequenceNo), res.valid ? "ok" : "danger");
+    } catch (e) {
+      toast(e.message, "danger");
+    }
+  }
+
+  /* Global Delegated Event Handlers (Zero inline on* handlers) */
+  document.addEventListener("click", async function (ev) {
+    const target = ev.target.closest("button, a, tr");
+    if (!target) return;
+
+    if (target.id === "dk-rail-toggle") {
+      const sh = document.getElementById("dk-shell");
+      if (window.innerWidth <= 768) sh.classList.toggle("dk-mobile-open");
+      else sh.classList.toggle("dk-rail-collapsed");
+      return;
+    }
+    if (target.id === "dk-theme-toggle") { toggleTheme(); return; }
+    if (target.id === "dk-refresh-btn") { loadAll(); toast("Refreshed control-plane state", "ok"); return; }
+    if (target.id === "dk-cmdk-open") { openCmdk(); return; }
+    if (target.id === "dk-cmdk-close") { closeCmdk(); return; }
+    if (target.id === "dk-keys-open") { document.getElementById("dk-keys-backdrop").hidden = false; return; }
+    if (target.id === "dk-keys-close") { document.getElementById("dk-keys-backdrop").hidden = true; return; }
+    if (target.id === "dk-drawer-close") { closeInspector(); return; }
+
+    if (target.hasAttribute("data-nav")) {
+      ev.preventDefault();
+      switchView(target.getAttribute("data-nav"));
+      return;
+    }
+    if (target.hasAttribute("data-topic-nav")) {
+      state.filterTopic = target.getAttribute("data-topic-nav");
+      state.filterFingerprint = "";
+      state.filterStatus = "";
+      switchView("messages");
+      return;
+    }
+    if (target.hasAttribute("data-cluster-filter")) {
+      state.filterFingerprint = target.getAttribute("data-cluster-filter");
+      state.filterStatus = "";
+      switchView("messages");
+      return;
+    }
+    if (target.hasAttribute("data-cluster-draft")) {
+      const fp = target.getAttribute("data-cluster-draft");
+      const sample = state.allMessagesSample.find(function (x) { return x.fingerprint === fp; });
+      state.draftForm.fingerprintFilter = fp;
+      state.draftForm.dltTopicFilter = sample ? (sample.dltTopic || "") : "";
+      state.draftForm.targetTopic = sample ? (sample.originalTopic || "") : "";
+      state.draftForm.name = "Replay cluster " + shortHash(fp);
+      switchView("draft");
+      return;
+    }
+    if (target.hasAttribute("data-filter-status-jump")) {
+      state.filterStatus = target.getAttribute("data-filter-status-jump");
+      switchView("messages");
+      return;
+    }
+    if (target.hasAttribute("data-status-tab")) {
+      state.filterStatus = target.getAttribute("data-status-tab");
+      loadMessages(null);
+      return;
+    }
+    if (target.hasAttribute("data-clear-filter")) {
+      const k = target.getAttribute("data-clear-filter");
+      if (k === "topic") state.filterTopic = "";
+      if (k === "fp") state.filterFingerprint = "";
+      if (k === "status") state.filterStatus = "";
+      loadMessages(null);
+      return;
+    }
+    if (target.hasAttribute("data-density-set")) {
+      state.density = target.getAttribute("data-density-set");
+      try { localStorage.setItem("dlt_deck_density", state.density); } catch (_) {}
+      if (state.density === "compact") document.documentElement.setAttribute("data-density", "compact");
+      else document.documentElement.removeAttribute("data-density");
+      renderView();
+      return;
+    }
+    if (target.id === "btn-next-cursor" && state.nextCursor) {
+      loadMessages(state.nextCursor);
+      return;
+    }
+    if (target.id === "btn-draft-from-filter") {
+      state.draftForm.dltTopicFilter = state.filterTopic;
+      state.draftForm.fingerprintFilter = state.filterFingerprint;
+      const sample = state.messages[0] || state.allMessagesSample[0];
+      state.draftForm.targetTopic = sample ? (sample.originalTopic || "") : "";
+      state.draftForm.name = state.filterTopic ? ("Replay " + state.filterTopic) : "Filtered DLT Replay";
+      switchView("draft");
+      return;
+    }
+    if (target.hasAttribute("data-inspect-id")) {
+      openInspector(target.getAttribute("data-inspect-id"), false);
+      return;
+    }
+    if (target.hasAttribute("data-dtab")) {
+      state.drawerTab = target.getAttribute("data-dtab");
+      renderDrawer();
+      return;
+    }
+    if (target.id === "btn-unmask-pii" && state.inspected) {
+      openInspector(state.inspected.summary.id, true);
+      return;
+    }
+    if (target.id === "btn-preview-patch" && state.inspected) {
+      const patchEl = document.getElementById("dr-patch-json");
+      state.patchDraft = patchEl ? patchEl.value : "";
+      try {
+        state.patchResult = await api("/messages/" + encodeURIComponent(state.inspected.summary.id) + "/patch-preview", {
+          method: "POST",
+          body: JSON.stringify({ mergePatchJson: state.patchDraft })
+        });
+        renderDrawer();
+        toast("RFC 7396 merge patch diff computed", "ok");
+      } catch (e) { toast(e.message, "danger"); }
+      return;
+    }
+    if (target.id === "btn-run-dryrun" && state.inspected) {
+      const tierEl = document.getElementById("dr-tier");
+      const tgtEl = document.getElementById("dr-target");
+      const patchEl = document.getElementById("dr-patch-json");
+      state.dryRunTier = tierEl ? tierEl.value : "TIER_1_VALIDATE";
+      state.dryRunTarget = tgtEl ? tgtEl.value.trim() : "";
+      state.patchDraft = patchEl ? patchEl.value : "";
+      try {
+        state.dryRunResult = await api("/messages/" + encodeURIComponent(state.inspected.summary.id) + "/dry-run", {
+          method: "POST",
+          body: JSON.stringify({
+            tier: state.dryRunTier,
+            targetTopic: state.dryRunTarget || null,
+            mergePatchJson: state.patchDraft.trim() || null
+          })
+        });
+        renderDrawer();
+        toast(state.dryRunResult.passed ? "Dry-run passed" : "Dry-run failed", state.dryRunResult.passed ? "ok" : "warn");
+      } catch (e) { toast(e.message, "danger"); }
+      return;
+    }
+    if (target.id === "btn-drawer-draft" && state.inspected) {
+      const s = state.inspected.summary;
+      state.draftForm.dltTopicFilter = s.dltTopic || "";
+      state.draftForm.fingerprintFilter = s.fingerprint || "";
+      state.draftForm.targetTopic = s.originalTopic || "";
+      state.draftForm.payloadPatchJson = state.patchDraft || "";
+      state.draftForm.name = "Recover " + shortClass(state.inspected.exceptionFqcn);
+      closeInspector();
+      switchView("draft");
+      return;
+    }
+    if (target.id === "btn-drawer-discard" && state.inspected) {
+      try {
+        await api("/messages/" + encodeURIComponent(state.inspected.summary.id) + "/discard", {
+          method: "POST",
+          body: JSON.stringify({ reason: "Discarded from workbench inspector" })
+        });
+        toast("Message discarded (audited)", "ok");
+        closeInspector();
+        loadAll();
+      } catch (e) { toast(e.message, "danger"); }
+      return;
+    }
+    if (target.hasAttribute("data-resolve-status") && state.inspected) {
+      const tgt = target.getAttribute("data-resolve-status");
+      try {
+        await api("/messages/" + encodeURIComponent(state.inspected.summary.id) + "/resolve", {
+          method: "POST",
+          body: JSON.stringify({ targetStatus: tgt, justification: "Manual approver resolution via workbench" })
+        });
+        toast("Resolved message to " + tgt, "ok");
+        closeInspector();
+        loadAll();
+      } catch (e) { toast(e.message, "danger"); }
+      return;
+    }
+    if (target.hasAttribute("data-plan-filter")) {
+      state.planFilter = target.getAttribute("data-plan-filter");
+      renderView();
+      return;
+    }
+    if (target.hasAttribute("data-plan-approve")) {
+      const pid = target.getAttribute("data-plan-approve");
+      const hash = target.getAttribute("data-plan-hash");
+      try {
+        const res = await api("/plans/" + encodeURIComponent(pid) + "/approve", {
+          method: "POST",
+          body: JSON.stringify({ expectedSpecHash: hash, executeAsync: false })
+        });
+        toast("Plan " + res.status + " (" + num(res.totalPublished) + " published)", "ok");
+        loadAll();
+      } catch (e) { toast(e.message, "danger"); }
+      return;
+    }
+    if (target.hasAttribute("data-plan-reject")) {
+      const pid = target.getAttribute("data-plan-reject");
+      const inp = document.querySelector('[data-reject-input="' + pid + '"]');
+      const reason = (inp && inp.value.trim()) ? inp.value.trim() : "Rejected via Approval Queue";
+      try {
+        await api("/plans/" + encodeURIComponent(pid) + "/reject", {
+          method: "POST",
+          body: JSON.stringify({ reason: reason })
+        });
+        toast("Replay plan rejected", "warn");
+        loadAll();
+      } catch (e) { toast(e.message, "danger"); }
+      return;
+    }
+    if (target.id === "btn-reverify-audit" || target.id === "btn-reverify-audit-top") {
+      verifyAuditNow();
+      return;
+    }
+    if (target.hasAttribute("data-cmdk-idx")) {
+      const idx = Number(target.getAttribute("data-cmdk-idx"));
+      const item = state.cmdkItems[idx];
+      closeCmdk();
+      if (item) item.run();
+    }
+  });
+
+  // Backdrop click close
+  ["dk-drawer-backdrop", "dk-cmdk-backdrop", "dk-keys-backdrop"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function (ev) {
+      if (ev.target.id === id) {
+        if (id === "dk-drawer-backdrop") closeInspector();
+        else document.getElementById(id).hidden = true;
+      }
+    });
+  });
+
+  // Input & Change handlers
+  document.addEventListener("input", function (ev) {
+    if (ev.target.id === "msg-search-input") {
+      state.searchText = ev.target.value;
+      renderView();
+      const el = document.getElementById("msg-search-input");
+      if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+      return;
+    }
+    if (ev.target.id === "dk-cmdk-input") {
+      state.cmdkIdx = 0;
+      renderCmdk();
+      return;
+    }
+    if (ev.target.id === "dk-rail-filter") {
+      const q = ev.target.value.trim().toLowerCase();
+      document.querySelectorAll("[data-rail-label]").forEach(function (el) {
+        const hay = el.getAttribute("data-rail-label") || "";
+        el.hidden = !!(q && !hay.includes(q));
+      });
+    }
+  });
+
+  document.addEventListener("change", function (ev) {
+    if (ev.target.id === "msg-topic-select") {
+      state.filterTopic = ev.target.value;
+      loadMessages(null);
+    }
+  });
+
+  document.addEventListener("submit", async function (ev) {
+    if (ev.target.id !== "dk-draft-form") return;
+    ev.preventDefault();
+    const payload = {
+      name: document.getElementById("dp-name").value.trim(),
+      targetTopic: document.getElementById("dp-target").value.trim(),
+      dltTopicFilter: document.getElementById("dp-dlt").value || null,
+      fingerprintFilter: document.getElementById("dp-fp").value.trim() || null,
+      orderingMode: document.getElementById("dp-order").value,
+      rateLimitPerSec: Number(document.getElementById("dp-rate").value || 100),
+      maxRecords: Number(document.getElementById("dp-max").value || 200),
+      payloadPatchJson: document.getElementById("dp-patch").value.trim() || null
+    };
+    try {
+      const created = await api("/plans", { method: "POST", body: JSON.stringify(payload) });
+      toast("Plan frozen (" + shortHash(created.planSpecHash) + ") · " + created.status, "ok");
+      state.draftForm.name = "";
+      state.draftForm.payloadPatchJson = "";
+      state.view = "approvals";
+      await loadAll();
+    } catch (e) {
+      toast(e.message, "danger");
+    }
+  });
+
+  // Keyboard Shortcuts (⌘K, t, ?, Esc, r, j/k, Enter, 1-5)
+  document.addEventListener("keydown", function (ev) {
+    const inField = ev.target && (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA" || ev.target.tagName === "SELECT");
+    if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "k") {
+      ev.preventDefault();
+      if (document.getElementById("dk-cmdk-backdrop").hidden) openCmdk();
+      else closeCmdk();
+      return;
+    }
+    if (!document.getElementById("dk-cmdk-backdrop").hidden) {
+      if (ev.key === "Escape") { closeCmdk(); return; }
+      if (ev.key === "ArrowDown") { ev.preventDefault(); state.cmdkIdx = (state.cmdkIdx + 1) % Math.max(1, state.cmdkItems.length); renderCmdk(); return; }
+      if (ev.key === "ArrowUp") { ev.preventDefault(); state.cmdkIdx = (state.cmdkIdx - 1 + Math.max(1, state.cmdkItems.length)) % Math.max(1, state.cmdkItems.length); renderCmdk(); return; }
+      if (ev.key === "Enter" && state.cmdkItems[state.cmdkIdx]) { ev.preventDefault(); const it = state.cmdkItems[state.cmdkIdx]; closeCmdk(); it.run(); return; }
+      return;
+    }
+    if (ev.key === "Escape") {
+      closeInspector();
+      document.getElementById("dk-keys-backdrop").hidden = true;
+      return;
+    }
+    if (inField) return;
+    if (ev.key === "t") { toggleTheme(); return; }
+    if (ev.key === "?") { document.getElementById("dk-keys-backdrop").hidden = false; return; }
+    if (ev.key === "r") { loadAll(); toast("Refreshed", "ok"); return; }
+    if (ev.key === "1") { switchView("overview"); return; }
+    if (ev.key === "2") { switchView("clusters"); return; }
+    if (ev.key === "3") { switchView("messages"); return; }
+    if (ev.key === "4") { switchView("approvals"); return; }
+    if (ev.key === "5") { switchView("audit"); return; }
+    if (state.view === "messages" && state.messages.length) {
+      if (ev.key === "j") { state.kbIndex = Math.min(state.messages.length - 1, state.kbIndex + 1); renderView(); return; }
+      if (ev.key === "k") { state.kbIndex = Math.max(0, state.kbIndex - 1); renderView(); return; }
+      if (ev.key === "Enter" && state.kbIndex >= 0 && state.messages[state.kbIndex]) {
+        openInspector(state.messages[state.kbIndex].id, false);
+      }
+    }
+  });
+
+  // Live SSE Overview Subscription
+  function connectSse() {
+    if (typeof EventSource === "undefined") return;
+    try {
+      const es = new EventSource(API + "/stream");
+      es.addEventListener("overview", function (ev) {
+        try {
+          state.overview = JSON.parse(ev.data);
+          updateChrome();
+        } catch (_) {}
+      });
+      es.onerror = function () {
+        es.close();
+        setTimeout(connectSse, 15000);
+      };
+    } catch (_) {}
+  }
+
+  loadAll().then(function () {
+    const qs = new URLSearchParams(window.location.search);
+    const inspectFirst = qs.get("inspect");
+    if (inspectFirst && state.allMessagesSample.length) {
+      const target = state.allMessagesSample.find(function (m) {
+        return m.payloadFormat === inspectFirst || m.status === inspectFirst || m.failureCategory === inspectFirst;
+      }) || state.allMessagesSample[0];
+      if (target) openInspector(target.id, false);
+    }
+  });
   connectSse();
 })();
 </script>

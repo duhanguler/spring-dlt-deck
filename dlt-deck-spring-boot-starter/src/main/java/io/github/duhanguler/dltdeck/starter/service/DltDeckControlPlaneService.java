@@ -116,8 +116,11 @@ public final class DltDeckControlPlaneService {
                 .items()
                 .size();
 
+        ActorContext actor = ActorContext.currentOrSystem();
         return new OverviewSnapshot(
                 properties.getPodId(),
+                actor.actorId(),
+                actor.role().name(),
                 ingestionEngine.isRunning(),
                 ingestionEngine.totalIngestionLag(),
                 ingestionEngine.ingestionLagByTopic(),
@@ -461,6 +464,8 @@ public final class DltDeckControlPlaneService {
 
     public record OverviewSnapshot(
             String podId,
+            String actorId,
+            String actorRole,
             boolean ingestionRunning,
             long totalIngestionLag,
             Map<String, Long> ingestionLagByTopic,

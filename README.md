@@ -1,26 +1,47 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="spring-dlt-deck" width="760">
+  <img src="docs/assets/logo.svg" alt="spring-dlt-deck — Dead-Letter Topic Control Plane for Spring Boot 4.2 and Apache Kafka 4.4" width="100%" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/duhanguler/spring-dlt-deck/actions/workflows/ci.yml"><img src="https://github.com/duhanguler/spring-dlt-deck/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/Java-25%20LTS-0284c7?logo=openjdk&logoColor=white" alt="Java 25 LTS">
-  <img src="https://img.shields.io/badge/Spring%20Boot-4.2.0-6db33f?logo=springboot&logoColor=white" alt="Spring Boot 4.2.0">
-  <img src="https://img.shields.io/badge/Apache%20Kafka-4.4.0%20KRaft-231f20?logo=apachekafka&logoColor=white" alt="Apache Kafka 4.4.0">
-  <img src="https://img.shields.io/badge/Core%20Coverage-97.6%25%20Line%20%7C%2093.8%25%20Branch-22c55e" alt="Coverage">
-  <img src="https://img.shields.io/badge/NullAway%20%2B%20ArchUnit-Verified-8b5cf6" alt="NullAway + ArchUnit">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="Apache 2.0 License"></a>
+  <a href="https://github.com/duhanguler/spring-dlt-deck/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/duhanguler/spring-dlt-deck/ci.yml?branch=main&style=flat-square&label=CI" alt="CI" /></a>
+  <img src="https://img.shields.io/badge/Java-25%20LTS-18181b?style=flat-square&logo=openjdk&logoColor=white" alt="Java 25 LTS" />
+  <img src="https://img.shields.io/badge/Spring%20Boot-4.2.0-18181b?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 4.2.0" />
+  <img src="https://img.shields.io/badge/Apache%20Kafka-4.4.0%20KRaft-18181b?style=flat-square&logo=apachekafka&logoColor=white" alt="Apache Kafka 4.4.0" />
+  <img src="https://img.shields.io/badge/Core%20Coverage-97.6%25%20Line%20%7C%2093.8%25%20Branch-18181b?style=flat-square" alt="Coverage" />
+  <img src="https://img.shields.io/badge/CSP-Strict%20Nonce%20%280%20unsafe--inline%29-18181b?style=flat-square" alt="Strict Nonce CSP" />
+  <img src="https://img.shields.io/badge/NullAway%20%2B%20ArchUnit-Verified-18181b?style=flat-square" alt="NullAway + ArchUnit" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-18181b?style=flat-square" alt="Apache 2.0 License" /></a>
 </p>
 
-<p align="center">
-  <strong>Kafka UIs show you broken messages. <code>spring-dlt-deck</code> triages, redacts, dry-runs, four-eyes approves, and key-ordered replays them — safely, with zero host-app side effects.</strong>
-</p>
+<h3 align="center">
+  Kafka UIs show you broken messages. <code>spring-dlt-deck</code> triages, redacts, dry-runs, four-eyes approves, and key-ordered replays them.<br />
+  <sub>Zero Node build · Zero external CDN · Two short TXs + Fencing Token · Strict Nonce CSP · Fail-Closed HITL MCP Server</sub>
+</h3>
 
 ---
 
 <p align="center">
-  <img src="docs/assets/workbench-preview.svg" alt="spring-dlt-deck Precision Workbench UI (Carbon Dark)" width="960">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dashboard-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/dashboard-light.png" />
+    <img src="docs/assets/dashboard-dark.png" alt="spring-dlt-deck Carbon Dark & Swiss Light Operations Workbench" width="100%" />
+  </picture>
 </p>
+
+<table>
+  <tr>
+    <td width="50%">
+      <strong>Four-Eyes Approval Queue (<code>/dlt-deck</code>)</strong><br />
+      <sub>Frozen <code>planSpecHash</code> TOCTOU lock, inline RFC 7396 merge patch diff chips, maker≠checker enforcement &amp; key-striped replay telemetry.</sub>
+      <img src="docs/assets/approvals-dark.png" alt="spring-dlt-deck Four-Eyes Maker-Checker Approval Queue" width="100%" />
+    </td>
+    <td width="50%">
+      <strong>Messages Grid &amp; Slide-Over Poison-Pill Inspector</strong><br />
+      <sub>Checksum-verified <code>PII REDACTED</code> preview, Confluent <code>#42</code> <code>NOT_PATCHABLE</code> guard, 3-Tier Dry-Run &amp; signed keyset pagination.</sub>
+      <img src="docs/assets/inspector-drawer-dark.png" alt="spring-dlt-deck Messages Grid and Slide-Over Poison-Pill Inspector Drawer" width="100%" />
+    </td>
+  </tr>
+</table>
 
 ## Why `spring-dlt-deck` Exists
 
