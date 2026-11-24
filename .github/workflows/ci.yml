@@ -35,14 +35,14 @@ jobs:
 
       - name: Upload JaCoCo Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-core-report
           path: dlt-deck-core/target/site/jacoco/
 
       - name: Upload CycloneDX SBOM
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cyclonedx-sbom
           path: target/sbom.json
