@@ -1,5 +1,6 @@
 package io.github.duhanguler.dltdeck.starter.it;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -16,11 +17,15 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  */
 public final class SharedContainers {
 
-    public static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer("postgres:17-alpine").withReuse(false);
+    public static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
+            .withStartupTimeout(Duration.ofMinutes(2))
+            .withStartupAttempts(2)
+            .withReuse(false);
 
-    public static final KafkaContainer KAFKA =
-            new KafkaContainer("apache/kafka-native:4.0.0").withReuse(false);
+    public static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka-native:4.0.0")
+            .withStartupTimeout(Duration.ofMinutes(2))
+            .withStartupAttempts(2)
+            .withReuse(false);
 
     static {
         POSTGRES.start();
